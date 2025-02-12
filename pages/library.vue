@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLibraryStore } from "@/stores/libraryStore"
+import AddBook from "~/components/AddBook.vue"
 const libraryStore = useLibraryStore()
 
 onMounted(async () => {
@@ -51,12 +52,19 @@ onMounted(async () => {
                 Export
               </span>
             </Button>
-            <Button size="sm" class="h-7 gap-1">
-              <LucidePlusCircle class="h-3.5 w-3.5" />
-              <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                Add Book
-              </span>
-            </Button>
+            <Dialog>
+              <DialogTrigger as-child>
+                <Button size="sm" class="h-7 gap-1">
+                  <LucidePlusCircle class="h-3.5 w-3.5" />
+                  <span class="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add Book
+                  </span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent class="md:w-[600px]">
+                <AddBook />
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
         <TabsContent value="all">

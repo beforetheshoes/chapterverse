@@ -1,14 +1,26 @@
+import type { QueryResult, QueryData } from "@supabase/supabase-js"
 import { defineStore } from "pinia"
-import type { Database } from "@/database.types"
-import { createLibraryWithBooksQuery, type LibraryWithBooksItem } from "@/types/types"
 
 export const useLibraryStore = defineStore("libraryStore", () => {
-  const supabase = useSupabaseClient()
+  const supabase = useSupabaseClient<Database>()
 
-  const libraryWithBooksQuery = createLibraryWithBooksQuery(supabase)
-
-  const books: Ref<Database["public"]["Tables"]["books"]["Row"][]> = ref([])
-  const library: Ref<LibraryWithBooksItem[]> = ref([])
+  const libraryWithBooksQuery = supabase.from("libraries").select(`
+    status,
+    progress,
+    progressType,
+    dateStarted,
+    dateFinished,
+    rating,
+    bookId,
+    books (
+      id,
+      title,
+      subtitle
+    )
+  `)
+  
+  const books: Ref<Book[]> = ref([])
+  const library: Ref<LibraryWithBooks> = ref([])
 
   const getBooks = async () => {
     const { data, error } = await supabase

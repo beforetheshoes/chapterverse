@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { Database } from "@/database.types"
+import type { Database } from "~/types/database.types"
 import { useLibraryStore } from "@/stores/libraryStore"
 import type { QueryData } from "@supabase/supabase-js"
 import type { LibraryWithBooksItem } from "@/types/types"
