@@ -35,7 +35,7 @@ const handleSubmit = async () => {
 }
 
 definePageMeta({
-  colorMode: "light"
+  layout: "login"
 })
 </script>
 
