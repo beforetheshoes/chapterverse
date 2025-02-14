@@ -27,7 +27,7 @@ const props = defineProps<{
       </DropdownMenu>
     </TableCell>
     <TableCell class="hidden sm:table-cell">
-      <nuxt-img
+      <NuxtImg
         alt="Book cover image"
         class="aspect-square rounded-md object-cover"
         height="64"
@@ -40,9 +40,9 @@ const props = defineProps<{
     <TableCell>{{ book.book.subtitle }}</TableCell>
     <TableCell>{{ book.status }}</TableCell>
     <TableCell>{{ book.progress }}</TableCell>
-    <TableCell>{{ book.progressType }}</TableCell>
-    <TableCell>{{ book.dateStarted }}</TableCell>
-    <TableCell>{{ book.dateFinished }}</TableCell>
+    <TableCell>{{ book.progress_type }}</TableCell>
+    <TableCell>{{ book.date_started }}</TableCell>
+    <TableCell>{{ book.date_finished }}</TableCell>
     <TableCell>{{ book.rating }}</TableCell>
   </TableRow>
 </template>

@@ -11,75 +11,75 @@ export type Database = {
     Tables: {
       authors: {
         Row: {
-          dateOfBirth: string | null
-          defaultImage: string | null
-          firstName: string
+          date_of_birth: string | null
+          default_image: string | null
+          first_name: string
           id: string
-          lastName: string | null
-          olAuthorId: string | null
+          last_name: string | null
+          ol_author_id: string | null
         }
         Insert: {
-          dateOfBirth?: string | null
-          defaultImage?: string | null
-          firstName: string
+          date_of_birth?: string | null
+          default_image?: string | null
+          first_name: string
           id?: string
-          lastName?: string | null
-          olAuthorId?: string | null
+          last_name?: string | null
+          ol_author_id?: string | null
         }
         Update: {
-          dateOfBirth?: string | null
-          defaultImage?: string | null
-          firstName?: string
+          date_of_birth?: string | null
+          default_image?: string | null
+          first_name?: string
           id?: string
-          lastName?: string | null
-          olAuthorId?: string | null
+          last_name?: string | null
+          ol_author_id?: string | null
         }
         Relationships: []
       }
       books: {
         Row: {
-          authorIds: string[] | null
+          author_ids: string[] | null
           description: string | null
           format: string | null
           id: string
           isbn10: string | null
           isbn13: string | null
-          olAuthorIds: string[] | null
-          olEditionId: string | null
-          olWorkId: string | null
-          publishDate: string | null
+          ol_author_ids: string[] | null
+          ol_edition_id: string | null
+          ol_work_id: string | null
+          publish_date: string | null
           subjects: string[] | null
           subtitle: string | null
           tags: string[] | null
           title: string
         }
         Insert: {
-          authorIds?: string[] | null
+          author_ids?: string[] | null
           description?: string | null
           format?: string | null
           id?: string
           isbn10?: string | null
           isbn13?: string | null
-          olAuthorIds?: string[] | null
-          olEditionId?: string | null
-          olWorkId?: string | null
-          publishDate?: string | null
+          ol_author_ids?: string[] | null
+          ol_edition_id?: string | null
+          ol_work_id?: string | null
+          publish_date?: string | null
           subjects?: string[] | null
           subtitle?: string | null
           tags?: string[] | null
           title: string
         }
         Update: {
-          authorIds?: string[] | null
+          author_ids?: string[] | null
           description?: string | null
           format?: string | null
           id?: string
           isbn10?: string | null
           isbn13?: string | null
-          olAuthorIds?: string[] | null
-          olEditionId?: string | null
-          olWorkId?: string | null
-          publishDate?: string | null
+          ol_author_ids?: string[] | null
+          ol_edition_id?: string | null
+          ol_work_id?: string | null
+          publish_date?: string | null
           subjects?: string[] | null
           subtitle?: string | null
           tags?: string[] | null
@@ -89,49 +89,49 @@ export type Database = {
       }
       libraries: {
         Row: {
-          bookId: string
-          dateFinished: string | null
-          dateStarted: string | null
+          book_id: string
+          date_finished: string | null
+          date_started: string | null
           id: string
           progress: number | null
-          progressType: string | null
+          progress_type: string | null
           rating: number | null
           status: string
-          userId: string
+          user_id: string
         }
         Insert: {
-          bookId: string
-          dateFinished?: string | null
-          dateStarted?: string | null
+          book_id: string
+          date_finished?: string | null
+          date_started?: string | null
           id?: string
           progress?: number | null
-          progressType?: string | null
+          progress_type?: string | null
           rating?: number | null
           status: string
-          userId?: string
+          user_id?: string
         }
         Update: {
-          bookId?: string
-          dateFinished?: string | null
-          dateStarted?: string | null
+          book_id?: string
+          date_finished?: string | null
+          date_started?: string | null
           id?: string
           progress?: number | null
-          progressType?: string | null
+          progress_type?: string | null
           rating?: number | null
           status?: string
-          userId?: string
+          user_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "libraries_bookId_fkey"
-            columns: ["bookId"]
+            columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "libraries_userId_fkey"
-            columns: ["userId"]
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -140,32 +140,32 @@ export type Database = {
       }
       users: {
         Row: {
-          avatarUrl: string | null
-          createdAt: string | null
-          email: string
-          fullName: string | null
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
           id: string
-          updatedAt: string | null
+          updated_at: string | null
           username: string | null
           website: string | null
         }
         Insert: {
-          avatarUrl?: string | null
-          createdAt?: string | null
-          email: string
-          fullName?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
           id?: string
-          updatedAt?: string | null
+          updated_at?: string | null
           username?: string | null
           website?: string | null
         }
         Update: {
-          avatarUrl?: string | null
-          createdAt?: string | null
-          email?: string
-          fullName?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
           id?: string
-          updatedAt?: string | null
+          updated_at?: string | null
           username?: string | null
           website?: string | null
         }

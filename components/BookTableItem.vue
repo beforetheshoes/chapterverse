@@ -38,10 +38,10 @@ const props = defineProps<{
     <TableCell>{{ book.isbn13 }}</TableCell>
     <TableCell>{{ book.format }}</TableCell>
     <TableCell>{{ book.description }}</TableCell>
-    <TableCell>{{ book.publishDate }}</TableCell>
+    <TableCell>{{ book.publish_date }}</TableCell>
     <TableCell>{{ book.tags }}</TableCell>
     <TableCell>{{ book.subjects }}</TableCell>
-    <TableCell>{{ book.olWorkId }}</TableCell>
-    <TableCell>{{ book.olEditionId }}</TableCell>
+    <TableCell>{{ book.ol_work_id }}</TableCell>
+    <TableCell>{{ book.ol_edition_id }}</TableCell>
   </TableRow>
 </template>
