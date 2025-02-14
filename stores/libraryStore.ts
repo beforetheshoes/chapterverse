@@ -7,11 +7,11 @@ export const useLibraryStore = defineStore("libraryStore", () => {
   const libraryWithBooksQuery = supabase.from("libraries").select(`
     status,
     progress,
-    progressType,
-    dateStarted,
-    dateFinished,
+    progress_type,
+    date_started,
+    date_finished,
     rating,
-    bookId,
+    book_id,
     books (
       id,
       title,

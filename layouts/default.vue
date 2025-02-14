@@ -36,7 +36,7 @@ onMounted(async () => {
             <LucidePackage2
               class="h-4 w-4 transition-all group-hover:scale-110"
             />
-            <span class="sr-only">Acme Inc</span>
+            <span class="sr-only">chapterverse</span>
           </a>
           <TooltipProvider>
             <Tooltip>
@@ -78,34 +78,6 @@ onMounted(async () => {
                 </NuxtLink>
               </TooltipTrigger>
               <TooltipContent side="right"> Books </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <a
-                  href="#"
-                  class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <LucideUsers2 class="h-5 w-5" />
-                  <span class="sr-only">Customers</span>
-                </a>
-              </TooltipTrigger>
-              <TooltipContent side="right"> Customers </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger as-child>
-                <a
-                  href="#"
-                  class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
-                >
-                  <LucideLineChart class="h-5 w-5" />
-                  <span class="sr-only">Analytics</span>
-                </a>
-              </TooltipTrigger>
-              <TooltipContent side="right"> Analytics </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </nav>
@@ -169,13 +141,6 @@ onMounted(async () => {
                   <LucidePackage class="h-5 w-5" />
                   Books
                 </NuxtLink>
-                <a
-                  href="#"
-                  class="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
-                >
-                  <LucideUsers2 class="h-5 w-5" />
-                  Customers
-                </a>
                 <a
                   href="#"
                   class="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
