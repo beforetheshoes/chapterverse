@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue"
 import { useAuthStore } from "~/stores/auth"
-import { useSupabaseClient } from "#imports"
 
 const supabase = useSupabaseClient()
 const authStore = useAuthStore()
@@ -72,7 +71,7 @@ definePageMeta({
           <p class="text-sm text-muted-foreground pt-4 mb-6 text-center">
             Enter the 6-digit code sent to {{ email }}
           </p>
-          <input
+          <Input
             type="text"
             v-model="otpCode"
             required
@@ -82,7 +81,7 @@ definePageMeta({
           />
         </div>
 
-        <button
+        <Button
           icon="i-heroicons-paper-airplane"
           size="lg"
           color="primary"
