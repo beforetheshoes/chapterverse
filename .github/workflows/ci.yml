@@ -50,8 +50,15 @@ jobs:
           node-version: "20"
           cache: "pnpm"
           cache-dependency-path: apps/web/pnpm-lock.yaml
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('apps/web/pnpm-lock.yaml') }}
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Install Cypress binary
+        run: pnpm exec cypress install
       - name: Lint
         run: pnpm lint
       - name: Format check
