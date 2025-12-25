@@ -1,0 +1,10 @@
+[project]
+name = "chapterverse-api"
+version = "0.1.0"
+description = "ChapterVerse API - FastAPI backend for book tracking"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.127.0",
+    "uvicorn[standard]>=0.40.0",
+]
