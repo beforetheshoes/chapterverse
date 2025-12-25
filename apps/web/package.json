@@ -7,11 +7,37 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "vitest run --coverage",
+    "test:unit:watch": "vitest",
+    "test:e2e": "start-server-and-test \"pnpm dev\" http://localhost:3000 \"pnpm exec cypress run\"",
+    "test:e2e:open": "start-server-and-test \"pnpm dev\" http://localhost:3000 \"pnpm exec cypress open\""
   },
   "dependencies": {
     "nuxt": "^4.2.2",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@vitejs/plugin-vue": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.16",
+    "@vue/compiler-sfc": "^3.5.26",
+    "@vue/test-utils": "^2.4.6",
+    "cypress": "^15.8.1",
+    "eslint": "^9.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.6.2",
+    "jsdom": "^27.3.0",
+    "prettier": "^3.3.3",
+    "start-server-and-test": "^2.0.8",
+    "typescript": "^5.6.3",
+    "vitest": "^4.0.16",
+    "vue-eslint-parser": "^10.2.0"
   }
 }

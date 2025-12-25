@@ -8,10 +8,10 @@ app = FastAPI(
 
 
 @app.get("/api/v1/health")
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.get("/api/v1/version")
-async def version():
+async def version() -> dict[str, str]:
     return {"version": "0.1.0"}

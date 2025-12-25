@@ -1,0 +1,5 @@
+.nuxt
+.output
+coverage
+dist
+node_modules
