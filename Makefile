@@ -12,7 +12,7 @@ dev:
 
 # Install, configure env, link .env to web, then start dev servers
 dev-up:
-	@if [ -L apps/web/.env ]; then rm -f apps/web/.env; fi
+	@rm -f apps/web/.env
 	@make install
 	@make supabase-env
 	@ln -sf "$(CURDIR)/.env" apps/web/.env
