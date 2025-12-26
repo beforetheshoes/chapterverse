@@ -1,9 +1,10 @@
 <template>
-  <div class="app-shell" data-test="app-shell">
+  <div class="app-shell" :data-test="shellTestId">
     <NuxtRouteAnnouncer />
-    <main class="app-shell__content">
-      <h1 class="app-shell__title" data-test="app-title">ChapterVerse</h1>
-      <NuxtWelcome />
-    </main>
+    <NuxtPage />
   </div>
 </template>
+
+<script setup lang="ts">
+const shellTestId = 'app-shell';
+</script>

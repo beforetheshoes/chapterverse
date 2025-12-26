@@ -17,7 +17,12 @@
     "test:e2e:open": "start-server-and-test \"pnpm dev\" http://localhost:3000 \"pnpm exec cypress open\""
   },
   "dependencies": {
+    "@primevue/nuxt-module": "^4.3.3",
+    "@primevue/themes": "^4.3.3",
+    "@supabase/supabase-js": "^2.56.1",
     "nuxt": "^4.2.2",
+    "primeicons": "^7.0.0",
+    "primevue": "^4.3.3",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4"
   },
@@ -25,6 +30,7 @@
     "@eslint/js": "^9.10.0",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
+    "@nuxtjs/tailwindcss": "^6.12.2",
     "@vitejs/plugin-vue": "^6.0.3",
     "@vitest/coverage-v8": "^4.0.16",
     "@vue/compiler-sfc": "^3.5.26",

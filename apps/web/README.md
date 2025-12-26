@@ -1,75 +1,47 @@
-# Nuxt Minimal Starter
+# ChapterVerse Web
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt 4.2.2 frontend using PrimeVue v4 (Aura theme) and Tailwind CSS.
+
+## Requirements
+
+- Node 20
+- pnpm 10
 
 ## Setup
 
-Make sure to install dependencies:
+From the repo root:
 
 ```bash
-# npm
-npm install
-
-# pnpm
 pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
+## Environment
 
-Start the development server on `http://localhost:3000`:
+The Supabase client reads the public runtime config values below. Nuxt loads `.env` from `apps/web` when
+running `pnpm dev` here. If you used `make supabase-env`, copy or symlink the repo root `.env` into
+`apps/web/.env` or export the variables in your shell.
+
+```
+NUXT_PUBLIC_SUPABASE_URL=
+NUXT_PUBLIC_SUPABASE_ANON_KEY=
+```
+
+## Development
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
 pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
-
-Build the application for production:
+## Tests
 
 ```bash
-# npm
-npm run build
+pnpm lint
+pnpm test:unit
+pnpm test:e2e
+```
 
-# pnpm
+## Build
+
+```bash
 pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

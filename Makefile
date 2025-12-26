@@ -1,4 +1,4 @@
-.PHONY: dev dev-api dev-web install install-api install-web \
+.PHONY: dev dev-api dev-web dev-up install install-api install-web \
 	supabase-start supabase-env supabase-health \
 	lint lint-api lint-web format format-api format-web \
 	format-check format-check-api format-check-web \
@@ -9,6 +9,15 @@
 dev:
 	@echo "Starting API and web servers..."
 	@make -j2 dev-api dev-web
+
+# Install, configure env, link .env to web, then start dev servers
+dev-up:
+	@if [ -L apps/web/.env ]; then rm -f apps/web/.env; fi
+	@make install
+	@make supabase-env
+	@ln -sf "$(CURDIR)/.env" apps/web/.env
+	@echo "Linked .env to apps/web/.env"
+	@make dev
 
 # Run API server
 dev-api:
