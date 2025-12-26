@@ -1,4 +1,5 @@
 .PHONY: dev dev-api dev-web install install-api install-web \
+	supabase-start supabase-env supabase-health \
 	lint lint-api lint-web format format-api format-web \
 	format-check format-check-api format-check-web \
 	typecheck typecheck-api test test-api test-web test-unit test-e2e \
@@ -16,6 +17,34 @@ dev-api:
 # Run web server
 dev-web:
 	cd apps/web && pnpm dev
+
+# Supabase local dev
+supabase-start:
+	supabase start
+
+supabase-env: supabase-start
+	@supabase status -o env | while IFS= read -r line; do \
+		case "$$line" in \
+			API_URL=*) \
+				value="$${line#API_URL=}"; \
+				echo "SUPABASE_URL=$$value"; \
+				echo "NUXT_PUBLIC_SUPABASE_URL=$$value"; \
+				;; \
+			ANON_KEY=*) \
+				value="$${line#ANON_KEY=}"; \
+				echo "SUPABASE_ANON_KEY=$$value"; \
+				echo "NUXT_PUBLIC_SUPABASE_ANON_KEY=$$value"; \
+				;; \
+			SERVICE_ROLE_KEY=*) \
+				value="$${line#SERVICE_ROLE_KEY=}"; \
+				echo "SUPABASE_SERVICE_ROLE_KEY=$$value"; \
+				;; \
+		esac; \
+	done > .env
+	@echo "Wrote .env from local Supabase status."
+
+supabase-health:
+	@scripts/supabase-health.sh
 
 # Install all dependencies
 install: install-api install-web
