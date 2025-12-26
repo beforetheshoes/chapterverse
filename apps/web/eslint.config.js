@@ -39,6 +39,9 @@ export default [
         ecmaVersion: 'latest',
         sourceType: 'module',
       },
+      globals: {
+        console: 'readonly',
+      },
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
@@ -67,6 +70,24 @@ export default [
     languageOptions: {
       globals: {
         defineNuxtConfig: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['plugins/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        defineNuxtPlugin: 'readonly',
+        useRuntimeConfig: 'readonly',
+      },
+    },
+  },
+  {
+    files: ['tests/**/*.{js,ts}'],
+    languageOptions: {
+      globals: {
+        HTMLInputElement: 'readonly',
       },
     },
   },

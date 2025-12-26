@@ -33,6 +33,12 @@ This starts:
 - API on `http://localhost:8000`
 - Web on `http://localhost:3000`
 
+All-in-one setup (install deps, generate Supabase env, link web `.env`, start dev servers):
+
+```bash
+make dev-up
+```
+
 Health check:
 
 ```bash
