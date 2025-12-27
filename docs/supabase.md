@@ -34,9 +34,11 @@ supabase status -o env
 # API_URL -> SUPABASE_URL / NUXT_PUBLIC_SUPABASE_URL
 # ANON_KEY -> SUPABASE_ANON_KEY / NUXT_PUBLIC_SUPABASE_ANON_KEY
 # SERVICE_ROLE_KEY -> SUPABASE_SERVICE_ROLE_KEY
+# JWT_SECRET -> SUPABASE_JWT_SECRET
 ```
 
 Use the output to populate your local `.env` (not committed). The `service_role` key is server-only.
+The API also reads `.env` automatically on startup, so you can run `make dev-api` without manually sourcing it.
 
 Local development is fully independent of hosting. You can build and run the app with local Supabase even if staging/production hosting is not set up yet.
 
