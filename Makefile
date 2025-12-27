@@ -7,6 +7,7 @@
 
 API_VENV_PY := $(CURDIR)/apps/api/.venv/bin/python
 API_RUN := $(if $(wildcard $(API_VENV_PY)),$(API_VENV_PY) -m,uv run)
+API_BUILD := $(if $(wildcard $(API_VENV_PY)),$(API_VENV_PY) -m build,uv build)
 
 # Run both API and web in development mode
 dev:
@@ -126,7 +127,7 @@ test-e2e:
 build: build-api build-web
 
 build-api:
-	cd apps/api && $(API_RUN) build
+	cd apps/api && $(API_BUILD)
 
 build-web:
 	cd apps/web && pnpm build

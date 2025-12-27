@@ -26,6 +26,21 @@ def test_get_settings_blank_audience_and_reset_cache() -> None:
         reset_settings_cache()
 
 
+def test_get_settings_invalid_ttl_defaults() -> None:
+    original_env = os.environ.copy()
+    try:
+        os.environ["SUPABASE_URL"] = "https://example.supabase.co/"
+        os.environ["SUPABASE_JWKS_CACHE_TTL_SECONDS"] = "not-a-number"
+        reset_settings_cache()
+
+        settings = get_settings()
+        assert settings.supabase_jwks_cache_ttl_seconds == 300
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)
+        reset_settings_cache()
+
+
 def test_get_settings_loads_dotenv(tmp_path: Path) -> None:
     original_env = os.environ.copy()
     original_cwd = os.getcwd()

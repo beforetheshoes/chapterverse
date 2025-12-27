@@ -105,7 +105,6 @@ async def decode_jwt(
         raise AuthError(
             code="invalid_token",
             message="Invalid JWT header.",
-            details={"error": str(exc)},
         ) from exc
 
     alg = header.get("alg")
@@ -136,7 +135,6 @@ async def decode_jwt(
             raise AuthError(
                 code="invalid_token",
                 message="Invalid JWT.",
-                details={"error": str(exc)},
             ) from exc
 
     if alg not in ALGORITHMS_RS256:
@@ -153,7 +151,6 @@ async def decode_jwt(
             code="jwks_unavailable",
             message="Unable to fetch JWKS.",
             status_code=503,
-            details={"error": str(exc)},
         ) from exc
 
     key = _find_jwk(jwks, kid)
@@ -174,7 +171,6 @@ async def decode_jwt(
         raise AuthError(
             code="invalid_token",
             message="Invalid JWT.",
-            details={"error": str(exc)},
         ) from exc
 
 

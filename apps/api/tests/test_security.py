@@ -32,6 +32,7 @@ SUPABASE_URL = "https://example.supabase.co"
 KID = "test-kid"
 JWT_SECRET = "local-jwt-secret"
 
+
 def _generate_rsa_keypair() -> tuple[str, str]:
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     private_pem = private_key.private_bytes(
@@ -39,10 +40,14 @@ def _generate_rsa_keypair() -> tuple[str, str]:
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
     ).decode()
-    public_pem = private_key.public_key().public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
-    ).decode()
+    public_pem = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode()
+    )
     return private_pem, public_pem
 
 
@@ -85,7 +90,9 @@ def _make_token(audience: str = "authenticated") -> str:
         "iss": issuer,
         "exp": int(time.time()) + 3600,
     }
-    token = jwt.encode(payload, RSA_PRIVATE_KEY, algorithm="RS256", headers={"kid": KID})
+    token = jwt.encode(
+        payload, RSA_PRIVATE_KEY, algorithm="RS256", headers={"kid": KID}
+    )
     return cast(str, token)
 
 
@@ -211,7 +218,7 @@ def test_decode_jwt_missing_kid() -> None:
     issuer = f"{SUPABASE_URL}/auth/v1"
     token = jwt.encode(
         {"sub": "user-123", "aud": "authenticated", "iss": issuer, "exp": 9999999999},
-        PRIVATE_KEY,
+        RSA_PRIVATE_KEY,
         algorithm="RS256",
     )
 
