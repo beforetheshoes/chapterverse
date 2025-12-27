@@ -33,6 +33,8 @@ def _find_repo_root() -> Path:
                 return parent
 
     parents = start_dir.parents
+    if not parents:
+        return start_dir
     return parents[min(4, len(parents) - 1)]
 
 
