@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, cast
 
 from fastapi import FastAPI, HTTPException, Request
@@ -8,6 +9,8 @@ from fastapi.responses import JSONResponse
 
 from app.core.responses import fail
 from app.core.security import AuthError
+
+logger = logging.getLogger(__name__)
 
 
 def auth_exception_handler(_: Request, exc: Exception) -> JSONResponse:
@@ -50,6 +53,7 @@ def validation_exception_handler(_: Request, exc: Exception) -> JSONResponse:
 
 
 def unhandled_exception_handler(_: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled exception", exc_info=exc)
     return JSONResponse(
         status_code=500,
         content=fail(code="internal_error", message="Internal server error."),
