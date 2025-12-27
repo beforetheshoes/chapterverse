@@ -5,6 +5,9 @@
 	typecheck typecheck-api test test-api test-web test-unit test-e2e \
 	build build-api build-web quality
 
+API_VENV_PY := $(CURDIR)/apps/api/.venv/bin/python
+API_RUN := $(if $(wildcard $(API_VENV_PY)),$(API_VENV_PY) -m,uv run)
+
 # Run both API and web in development mode
 dev:
 	@echo "Starting API and web servers..."
@@ -21,7 +24,7 @@ dev-up:
 
 # Run API server
 dev-api:
-	cd apps/api && uv run uvicorn main:app --reload --port 8000
+	cd apps/api && $(API_RUN) uvicorn main:app --reload --port 8000
 
 # Run web server
 dev-web:
@@ -48,6 +51,10 @@ supabase-env: supabase-start
 				value="$${line#SERVICE_ROLE_KEY=}"; \
 				echo "SUPABASE_SERVICE_ROLE_KEY=$$value"; \
 				;; \
+			JWT_SECRET=*) \
+				value="$${line#JWT_SECRET=}"; \
+				echo "SUPABASE_JWT_SECRET=$$value"; \
+				;; \
 		esac; \
 	done > .env
 	@echo "Wrote .env from local Supabase status."
@@ -73,7 +80,7 @@ quality: format-check lint typecheck test build
 lint: lint-api lint-web
 
 lint-api:
-	cd apps/api && uv run ruff check .
+	cd apps/api && $(API_RUN) ruff check .
 
 lint-web:
 	cd apps/web && pnpm lint
@@ -82,7 +89,7 @@ lint-web:
 format: format-api format-web
 
 format-api:
-	cd apps/api && uv run black .
+	cd apps/api && $(API_RUN) black .
 
 format-web:
 	cd apps/web && pnpm format
@@ -90,7 +97,7 @@ format-web:
 format-check: format-check-api format-check-web
 
 format-check-api:
-	cd apps/api && uv run black --check .
+	cd apps/api && $(API_RUN) black --check .
 
 format-check-web:
 	cd apps/web && pnpm format:check
@@ -99,13 +106,13 @@ format-check-web:
 typecheck: typecheck-api
 
 typecheck-api:
-	cd apps/api && uv run mypy .
+	cd apps/api && $(API_RUN) mypy .
 
 # Tests
 test: test-api test-web
 
 test-api:
-	cd apps/api && uv run pytest
+	cd apps/api && $(API_RUN) pytest
 
 test-web: test-unit test-e2e
 
@@ -119,7 +126,7 @@ test-e2e:
 build: build-api build-web
 
 build-api:
-	cd apps/api && uv run python -m build
+	cd apps/api && $(API_RUN) build
 
 build-web:
 	cd apps/web && pnpm build
