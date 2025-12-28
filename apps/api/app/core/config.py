@@ -26,7 +26,11 @@ def _find_repo_root() -> Path:
             return config_path
 
     start_dir = Path(__file__).resolve().parent
-    markers = ("pyproject.toml", "setup.cfg", ".git")
+    for parent in (start_dir, *start_dir.parents):
+        if (parent / ".git").exists():
+            return parent
+
+    markers = ("pyproject.toml", "setup.cfg")
     for parent in (start_dir, *start_dir.parents):
         for marker in markers:
             if (parent / marker).exists():

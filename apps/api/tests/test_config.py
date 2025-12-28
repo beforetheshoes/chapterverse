@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from app.core.config import _load_dotenv, get_settings, reset_settings_cache
+import pytest
+
+import app.core.config as config_module
 
 
 def test_get_settings_blank_audience_and_reset_cache() -> None:
@@ -12,9 +14,9 @@ def test_get_settings_blank_audience_and_reset_cache() -> None:
         os.environ["SUPABASE_JWT_SECRET"] = "local-secret"
         os.environ["SUPABASE_JWKS_CACHE_TTL_SECONDS"] = "120"
         os.environ["API_VERSION"] = "9.9.9"
-        reset_settings_cache()
+        config_module.reset_settings_cache()
 
-        settings = get_settings()
+        settings = config_module.get_settings()
         assert settings.supabase_url == "https://example.supabase.co"
         assert settings.supabase_jwt_audience is None
         assert settings.supabase_jwt_secret == "local-secret"
@@ -23,7 +25,7 @@ def test_get_settings_blank_audience_and_reset_cache() -> None:
     finally:
         os.environ.clear()
         os.environ.update(original_env)
-        reset_settings_cache()
+        config_module.reset_settings_cache()
 
 
 def test_get_settings_invalid_ttl_defaults() -> None:
@@ -31,14 +33,14 @@ def test_get_settings_invalid_ttl_defaults() -> None:
     try:
         os.environ["SUPABASE_URL"] = "https://example.supabase.co/"
         os.environ["SUPABASE_JWKS_CACHE_TTL_SECONDS"] = "not-a-number"
-        reset_settings_cache()
+        config_module.reset_settings_cache()
 
-        settings = get_settings()
+        settings = config_module.get_settings()
         assert settings.supabase_jwks_cache_ttl_seconds == 300
     finally:
         os.environ.clear()
         os.environ.update(original_env)
-        reset_settings_cache()
+        config_module.reset_settings_cache()
 
 
 def test_get_settings_loads_dotenv(tmp_path: Path) -> None:
@@ -71,8 +73,8 @@ def test_get_settings_loads_dotenv(tmp_path: Path) -> None:
             "API_VERSION",
         ]:
             os.environ.pop(key, None)
-        reset_settings_cache()
-        settings = get_settings()
+        config_module.reset_settings_cache()
+        settings = config_module.get_settings()
         assert settings.supabase_url == "https://env.example"
         assert settings.supabase_jwt_audience == "authenticated"
         assert settings.supabase_jwt_secret == "from-dotenv"
@@ -82,7 +84,7 @@ def test_get_settings_loads_dotenv(tmp_path: Path) -> None:
         os.chdir(original_cwd)
         os.environ.clear()
         os.environ.update(original_env)
-        reset_settings_cache()
+        config_module.reset_settings_cache()
 
 
 def test_load_dotenv_idempotent(tmp_path: Path) -> None:
@@ -95,12 +97,61 @@ def test_load_dotenv_idempotent(tmp_path: Path) -> None:
             encoding="utf-8",
         )
         os.environ.pop("SUPABASE_URL", None)
-        reset_settings_cache()
-        _load_dotenv()
-        _load_dotenv()
+        config_module.reset_settings_cache()
+        config_module._load_dotenv()
+        config_module._load_dotenv()
         assert os.environ.get("SUPABASE_URL") == "https://env.example"
     finally:
         os.chdir(original_cwd)
         os.environ.clear()
         os.environ.update(original_env)
-        reset_settings_cache()
+        config_module.reset_settings_cache()
+
+
+def test_get_settings_blank_jwt_secret() -> None:
+    original_env = os.environ.copy()
+    try:
+        os.environ["SUPABASE_URL"] = "https://example.supabase.co/"
+        os.environ["SUPABASE_JWT_SECRET"] = "   "
+        os.environ["SUPABASE_JWT_AUDIENCE"] = "authenticated"
+        config_module.reset_settings_cache()
+
+        settings = config_module.get_settings()
+        assert settings.supabase_jwt_secret is None
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)
+        config_module.reset_settings_cache()
+
+
+def test_find_repo_root_prefers_pyproject_when_git_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if self.name == ".git":
+            return False
+        return original_exists(self)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    repo_root = config_module._find_repo_root()
+    assert (repo_root / "pyproject.toml").exists()
+
+
+def test_find_repo_root_fallback_when_no_markers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_exists = Path.exists
+    blocked = {".git", "pyproject.toml", "setup.cfg"}
+
+    def fake_exists(self: Path) -> bool:
+        if self.name in blocked:
+            return False
+        return original_exists(self)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    start_dir = Path(config_module.__file__).resolve().parent
+    parents = start_dir.parents
+    expected = start_dir if not parents else parents[min(4, len(parents) - 1)]
+    assert config_module._find_repo_root() == expected
