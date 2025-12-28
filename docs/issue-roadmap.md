@@ -10,7 +10,7 @@ This is a suggested order of execution based on dependencies and risk.
 
 ## 2) Core data model
 
-- #8 Create bibliographic tables: authors, works, editions, work_authors
+- #8 Create bibliographic tables: authors, works, editions, work_authors - DONE
 - #9 Create external provider tracking tables: external_ids, source_records
 - #10 Create user tables: users, library_items, reading_sessions
 - #11 Create content tables: notes, highlights, reviews
