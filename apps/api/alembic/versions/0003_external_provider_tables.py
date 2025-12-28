@@ -84,18 +84,9 @@ def upgrade() -> None:
         "source_records",
         ["provider", "provider_id"],
     )
-    op.create_index(
-        "ix_source_records_provider_entity_lookup",
-        "source_records",
-        ["provider", "entity_type"],
-    )
 
 
 def downgrade() -> None:
-    op.drop_index(
-        "ix_source_records_provider_entity_lookup",
-        table_name="source_records",
-    )
     op.drop_index("ix_source_records_provider_lookup", table_name="source_records")
     op.drop_table("source_records")
     op.drop_index("ix_external_ids_entity_lookup", table_name="external_ids")
