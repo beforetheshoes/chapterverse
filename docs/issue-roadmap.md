@@ -14,7 +14,7 @@ This is a suggested order of execution based on dependencies and risk.
 - #9 Create external provider tracking tables: external_ids, source_records - DONE
 - #10 Create user tables: users, library_items, reading_sessions - DONE
 - #11 Create content tables: notes, highlights, reviews - DONE
-- #12 Create platform tables: api_clients, api_audit_logs
+- #12 Create platform tables: api_clients, api_audit_logs - DONE
 - #13 Configure RLS policies for user-owned tables
 
 ## 3) Auth
