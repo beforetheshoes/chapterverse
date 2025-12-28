@@ -14,10 +14,38 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+      - name: Start Supabase
+        run: make -C ../.. supabase-env
+      - name: Export Supabase env
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+
+          env_path = Path("../../.env")
+          out_path = Path(os.environ["GITHUB_ENV"])
+          lines = env_path.read_text(encoding="utf-8").splitlines()
+
+          with out_path.open("a", encoding="utf-8") as handle:
+              for line in lines:
+                  line = line.strip()
+                  if not line or line.startswith("#") or "=" not in line:
+                      continue
+                  key, _, value = line.partition("=")
+                  if (value.startswith('"') and value.endswith('"')) or (
+                      value.startswith("'") and value.endswith("'")
+                  ):
+                      value = value[1:-1]
+                  handle.write(f"{key}={value}\n")
+          PY
       - name: Install dependencies
         run: uv sync --extra dev --frozen
       - name: Lint
@@ -26,6 +54,8 @@ jobs:
         run: uv run black --check .
       - name: Type check
         run: uv run mypy .
+      - name: Apply migrations
+        run: uv run alembic upgrade head
       - name: Unit tests
         run: uv run pytest
       - name: Build
