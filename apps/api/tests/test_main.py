@@ -9,4 +9,4 @@ def test_app_instance() -> None:
     assert spec.loader is not None
     module = util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert module.app.title == "ChapterVerse API"
+    assert module.app.title == "The Seedbed API"

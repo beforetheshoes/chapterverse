@@ -8,7 +8,7 @@ from typing import cast
 import httpx
 import pytest
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jose import jwk, jwt
@@ -54,6 +54,27 @@ def _generate_rsa_keypair() -> tuple[str, str]:
 RSA_PRIVATE_KEY, RSA_PUBLIC_KEY = _generate_rsa_keypair()
 
 
+def _generate_ec_keypair() -> tuple[str, str]:
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode()
+    public_pem = (
+        private_key.public_key()
+        .public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+        )
+        .decode()
+    )
+    return private_pem, public_pem
+
+
+EC_PRIVATE_KEY, EC_PUBLIC_KEY = _generate_ec_keypair()
+
+
 def _settings() -> Settings:
     return Settings(
         supabase_url=SUPABASE_URL,
@@ -82,6 +103,14 @@ def _build_jwks() -> dict[str, object]:
     return {"keys": [public_jwk]}
 
 
+def _build_ec_jwks() -> dict[str, object]:
+    key = jwk.construct(EC_PUBLIC_KEY, "ES256")
+    public_jwk = key.to_dict()
+    public_jwk["kid"] = KID
+    public_jwk["use"] = "sig"
+    return {"keys": [public_jwk]}
+
+
 def _make_token(audience: str = "authenticated") -> str:
     issuer = f"{SUPABASE_URL}/auth/v1"
     payload = {
@@ -93,6 +122,18 @@ def _make_token(audience: str = "authenticated") -> str:
     token = jwt.encode(
         payload, RSA_PRIVATE_KEY, algorithm="RS256", headers={"kid": KID}
     )
+    return cast(str, token)
+
+
+def _make_es256_token(audience: str = "authenticated") -> str:
+    issuer = f"{SUPABASE_URL}/auth/v1"
+    payload = {
+        "sub": "user-123",
+        "aud": audience,
+        "iss": issuer,
+        "exp": int(time.time()) + 3600,
+    }
+    token = jwt.encode(payload, EC_PRIVATE_KEY, algorithm="ES256", headers={"kid": KID})
     return cast(str, token)
 
 
@@ -147,6 +188,18 @@ def test_decode_jwt_success() -> None:
 
     cache = JWKSCache(fetcher=fetcher, ttl_seconds=60)
     token = _make_token()
+    payload = asyncio.run(decode_jwt(token, settings=_settings(), jwks_cache=cache))
+    assert payload["sub"] == "user-123"
+
+
+def test_decode_jwt_es256_success() -> None:
+    jwks = _build_ec_jwks()
+
+    async def fetcher() -> dict[str, object]:
+        return jwks
+
+    cache = JWKSCache(fetcher=fetcher, ttl_seconds=60)
+    token = _make_es256_token()
     payload = asyncio.run(decode_jwt(token, settings=_settings(), jwks_cache=cache))
     assert payload["sub"] == "user-123"
 
@@ -208,7 +261,7 @@ def test_decode_jwt_unsupported_alg() -> None:
         return {"keys": []}
 
     cache = JWKSCache(fetcher=fetcher, ttl_seconds=60)
-    token = _make_token_with_alg("ES256")
+    token = _make_token_with_alg("RS512")
     with pytest.raises(AuthError) as exc:
         asyncio.run(decode_jwt(token, settings=_settings(), jwks_cache=cache))
     assert exc.value.code == "invalid_token"

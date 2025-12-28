@@ -5,7 +5,7 @@
         <template #title>
           <div class="flex items-center gap-3 text-2xl font-semibold">
             <i class="pi pi-book text-emerald-600" aria-hidden="true"></i>
-            <span data-test="hero-title">ChapterVerse</span>
+            <span data-test="hero-title">The Seedbed</span>
           </div>
         </template>
         <template #subtitle>
@@ -25,7 +25,7 @@
                 id="email"
                 v-model="email"
                 class="w-full"
-                placeholder="you@chapterverse.app"
+                placeholder="you@theseedbed.app"
                 data-test="hero-email-input"
               />
             </div>
