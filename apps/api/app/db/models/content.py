@@ -75,6 +75,11 @@ class Highlight(Base):
         sa.Index("ix_highlights_library_item_id", "library_item_id"),
         sa.Index("ix_highlights_visibility", "visibility"),
         sa.Index("ix_highlights_created_at", "created_at"),
+        sa.Index(
+            "ix_highlights_library_item_id_location_sort",
+            "library_item_id",
+            "location_sort",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
