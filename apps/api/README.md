@@ -1,4 +1,4 @@
-# ChapterVerse API
+# The Seedbed API
 
 ## Migrations (Alembic)
 

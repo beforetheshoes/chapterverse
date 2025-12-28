@@ -12,11 +12,11 @@ describe('index page', () => {
       },
     });
 
-    expect(wrapper.get('[data-test="hero-title"]').text()).toBe('ChapterVerse');
+    expect(wrapper.get('[data-test="hero-title"]').text()).toBe('The Seedbed');
     expect(wrapper.get('[data-test="hero-subtitle"]').text()).toContain('reading history');
     const emailInput = wrapper.get('[data-test="hero-email-input"]');
-    await emailInput.setValue('reader@chapterverse.app');
-    expect((emailInput.element as HTMLInputElement).value).toBe('reader@chapterverse.app');
+    await emailInput.setValue('reader@theseedbed.app');
+    expect((emailInput.element as HTMLInputElement).value).toBe('reader@theseedbed.app');
     expect(wrapper.get('[data-test="primary-cta"]').text()).toContain('Explore library');
     expect(wrapper.get('[data-test="secondary-cta"]').text()).toContain('Add a book');
     expect(wrapper.get('[data-test="status-card"]').exists()).toBe(true);

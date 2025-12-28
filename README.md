@@ -1,6 +1,6 @@
-# Chapterverse
+# The Seedbed
 
-Monorepo for Chapterverse services.
+Monorepo for The Seedbed services.
 
 ## Structure
 
@@ -52,3 +52,4 @@ Local development uses a local Supabase instance (`supabase start`). Staging and
 ## Docs
 
 - `docs/supabase.md` - Supabase environments and local setup
+- `docs/cli.md` - CLI usage for Supabase, Vercel, and Render
