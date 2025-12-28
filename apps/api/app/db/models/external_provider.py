@@ -26,7 +26,6 @@ class ExternalId(Base):
             name="uq_external_ids_provider_id",
         ),
         sa.Index("ix_external_ids_provider_lookup", "provider", "provider_id"),
-        sa.Index("ix_external_ids_entity_lookup", "entity_type", "entity_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
