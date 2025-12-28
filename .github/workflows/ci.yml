@@ -40,7 +40,9 @@ jobs:
                   if not line or line.startswith("#") or "=" not in line:
                       continue
                   key, _, value = line.partition("=")
-                  if value.startswith('"') and value.endswith('"'):
+              if (value.startswith('"') and value.endswith('"')) or (
+                  value.startswith("'") and value.endswith("'")
+              ):
                       value = value[1:-1]
                   handle.write(f"{key}={value}\n")
           PY

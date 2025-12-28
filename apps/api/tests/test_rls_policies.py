@@ -119,6 +119,50 @@ def _authenticated_conn(
         conn.close()
 
 
+def _assert_insert_and_delete(
+    conn: psycopg.Connection,
+    table: str,
+    pk_column: str,
+    insert_sql: str,
+    own_params: tuple[object, ...],
+    other_params: tuple[object, ...],
+    own_id: uuid.UUID,
+    other_id: uuid.UUID,
+) -> None:
+    conn.execute(insert_sql, own_params)
+    row = conn.execute(
+        sql.SQL("select count(*) from public.{table} where {pk} = %s;").format(
+            table=sql.Identifier(table),
+            pk=sql.Identifier(pk_column),
+        ),
+        (own_id,),
+    ).fetchone()
+    assert row is not None
+    assert row[0] == 1
+
+    with pytest.raises(psycopg.Error) as exc:
+        conn.execute(insert_sql, other_params)
+    assert exc.value.sqlstate == "42501"
+
+    delete_count = conn.execute(
+        sql.SQL("delete from public.{table} where {pk} = %s;").format(
+            table=sql.Identifier(table),
+            pk=sql.Identifier(pk_column),
+        ),
+        (own_id,),
+    ).rowcount
+    assert delete_count == 1
+
+    blocked_delete = conn.execute(
+        sql.SQL("delete from public.{table} where {pk} = %s;").format(
+            table=sql.Identifier(table),
+            pk=sql.Identifier(pk_column),
+        ),
+        (other_id,),
+    ).rowcount
+    assert blocked_delete == 0
+
+
 @pytest.fixture(scope="session")
 def db_url() -> str:
     return _get_db_url()
@@ -156,6 +200,7 @@ def seed_data(db_url: str) -> Iterator[dict[str, uuid.UUID]]:
     api_audit_log_2 = uuid.uuid4()
 
     with psycopg.connect(db_url, autocommit=True) as conn:
+        conn.execute("set role postgres;")
         _insert_auth_user(conn, user_1, "user1@example.com")
         _insert_auth_user(conn, user_2, "user2@example.com")
 
@@ -402,6 +447,7 @@ def seed_data(db_url: str) -> Iterator[dict[str, uuid.UUID]]:
         yield data
     finally:
         with psycopg.connect(db_url, autocommit=True) as conn:
+            conn.execute("set role postgres;")
             conn.execute(
                 "delete from public.api_audit_logs where id in (%s, %s);",
                 (api_audit_log_1, api_audit_log_2),
@@ -682,6 +728,271 @@ def test_read_only_tables_block_writes(
         with pytest.raises(psycopg.Error) as exc:
             conn.execute(insert_sql, params[params_key])
         assert exc.value.sqlstate == "42501"
+
+
+@pytest.mark.parametrize("table", READ_ONLY_TABLES)
+def test_read_only_tables_allow_reads(
+    db_url: str, seed_data: dict[str, uuid.UUID], table: str
+) -> None:
+    user_1 = seed_data["user_1"]
+    with _authenticated_conn(db_url, user_1) as conn:
+        row = conn.execute(
+            sql.SQL("select count(*) from public.{};").format(sql.Identifier(table))
+        ).fetchone()
+        assert row is not None
+        assert row[0] >= 1
+
+
+def test_user_scoped_inserts_and_deletes(
+    db_url: str, seed_data: dict[str, uuid.UUID]
+) -> None:
+    user_1 = seed_data["user_1"]
+    user_2 = seed_data["user_2"]
+    now = dt.datetime.now(tz=dt.UTC)
+
+    with _authenticated_conn(db_url, user_1) as conn:
+        library_item_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="library_items",
+            pk_column="id",
+            insert_sql="""
+                insert into public.library_items
+                    (id, user_id, work_id, status, visibility)
+                values (%s, %s, %s, %s, %s);
+            """,
+            own_params=(
+                library_item_id,
+                user_1,
+                seed_data["work_2"],
+                "to_read",
+                "private",
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["work_1"],
+                "reading",
+                "private",
+            ),
+            own_id=library_item_id,
+            other_id=seed_data["library_item_2"],
+        )
+
+        reading_session_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="reading_sessions",
+            pk_column="id",
+            insert_sql="""
+                insert into public.reading_sessions
+                    (id, user_id, library_item_id, started_at)
+                values (%s, %s, %s, %s);
+            """,
+            own_params=(
+                reading_session_id,
+                user_1,
+                seed_data["library_item_1"],
+                now,
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["library_item_2"],
+                now,
+            ),
+            own_id=reading_session_id,
+            other_id=seed_data["reading_session_2"],
+        )
+
+        reading_state_event_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="reading_state_events",
+            pk_column="id",
+            insert_sql="""
+                insert into public.reading_state_events
+                    (id, user_id, library_item_id, event_type, occurred_at)
+                values (%s, %s, %s, %s, %s);
+            """,
+            own_params=(
+                reading_state_event_id,
+                user_1,
+                seed_data["library_item_1"],
+                "paused",
+                now,
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["library_item_2"],
+                "paused",
+                now,
+            ),
+            own_id=reading_state_event_id,
+            other_id=seed_data["reading_state_event_2"],
+        )
+
+        note_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="notes",
+            pk_column="id",
+            insert_sql="""
+                insert into public.notes
+                    (id, user_id, library_item_id, title, body)
+                values (%s, %s, %s, %s, %s);
+            """,
+            own_params=(
+                note_id,
+                user_1,
+                seed_data["library_item_1"],
+                "Temp note",
+                "Temp body",
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["library_item_2"],
+                "Other note",
+                "Other body",
+            ),
+            own_id=note_id,
+            other_id=seed_data["note_2"],
+        )
+
+        highlight_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="highlights",
+            pk_column="id",
+            insert_sql="""
+                insert into public.highlights
+                    (id, user_id, library_item_id, quote)
+                values (%s, %s, %s, %s);
+            """,
+            own_params=(
+                highlight_id,
+                user_1,
+                seed_data["library_item_1"],
+                "Temporary highlight",
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["library_item_2"],
+                "Other highlight",
+            ),
+            own_id=highlight_id,
+            other_id=seed_data["highlight_2"],
+        )
+
+        review_item_id = uuid.uuid4()
+        conn.execute(
+            """
+            insert into public.library_items
+                (id, user_id, work_id, status, visibility)
+            values (%s, %s, %s, %s, %s);
+            """,
+            (
+                review_item_id,
+                user_1,
+                seed_data["work_2"],
+                "to_read",
+                "private",
+            ),
+        )
+        review_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="reviews",
+            pk_column="id",
+            insert_sql="""
+                insert into public.reviews
+                    (id, user_id, library_item_id, title, body, rating)
+                values (%s, %s, %s, %s, %s, %s);
+            """,
+            own_params=(
+                review_id,
+                user_1,
+                review_item_id,
+                "Temp review",
+                "Temp body",
+                6,
+            ),
+            other_params=(
+                uuid.uuid4(),
+                user_2,
+                seed_data["library_item_1"],
+                "Other review",
+                "Other body",
+                7,
+            ),
+            own_id=review_id,
+            other_id=seed_data["review_2"],
+        )
+        conn.execute(
+            "delete from public.library_items where id = %s;", (review_item_id,)
+        )
+
+        api_client_id = uuid.uuid4()
+        _assert_insert_and_delete(
+            conn,
+            table="api_clients",
+            pk_column="client_id",
+            insert_sql="""
+                insert into public.api_clients
+                    (client_id, name, owner_user_id)
+                values (%s, %s, %s);
+            """,
+            own_params=(
+                api_client_id,
+                "Temp Client",
+                user_1,
+            ),
+            other_params=(
+                uuid.uuid4(),
+                "Other Client",
+                user_2,
+            ),
+            own_id=api_client_id,
+            other_id=seed_data["api_client_2"],
+        )
+
+
+def test_users_insert_enforces_owner(db_url: str) -> None:
+    user_id = uuid.uuid4()
+    with psycopg.connect(db_url, autocommit=True) as conn:
+        conn.execute("set role postgres;")
+        _insert_auth_user(conn, user_id, "user3@example.com")
+
+    with _authenticated_conn(db_url, user_id) as conn:
+        handle = f"user_{user_id.hex[:8]}"
+        conn.execute(
+            "insert into public.users (id, handle, display_name) values (%s, %s, %s);",
+            (user_id, handle, "User Three"),
+        )
+        row = conn.execute(
+            "select count(*) from public.users where id = %s;", (user_id,)
+        ).fetchone()
+        assert row is not None
+        assert row[0] == 1
+
+        with pytest.raises(psycopg.Error) as exc:
+            conn.execute(
+                "insert into public.users (id, handle) values (%s, %s);",
+                (uuid.uuid4(), "user_blocked"),
+            )
+        assert exc.value.sqlstate == "42501"
+
+        delete_count = conn.execute(
+            "delete from public.users where id = %s;", (user_id,)
+        ).rowcount
+        assert delete_count == 1
+
+    with psycopg.connect(db_url, autocommit=True) as conn:
+        conn.execute("set role postgres;")
+        conn.execute("delete from auth.users where id = %s;", (user_id,))
 
 
 def test_api_audit_logs_block_writes(
