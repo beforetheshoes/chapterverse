@@ -12,9 +12,7 @@ from app.core.config import Settings, get_settings
 from app.core.jwks import JWKSCache
 
 ALGORITHMS_RS256 = ["RS256"]
-ALGORITHMS_ES256 = ["ES256"]
 ALGORITHMS_HS256 = ["HS256"]
-ALGORITHMS_ASYMMETRIC = [*ALGORITHMS_RS256, *ALGORITHMS_ES256]
 
 
 @dataclass
@@ -139,7 +137,7 @@ async def decode_jwt(
                 message="Invalid JWT.",
             ) from exc
 
-    if alg not in ALGORITHMS_ASYMMETRIC:
+    if alg not in ALGORITHMS_RS256:
         raise AuthError(code="invalid_token", message="Unsupported JWT algorithm.")
 
     kid = header.get("kid")
@@ -163,7 +161,7 @@ async def decode_jwt(
         payload = jwt.decode(
             token,
             key,
-            algorithms=ALGORITHMS_ASYMMETRIC,
+            algorithms=ALGORITHMS_RS256,
             issuer=issuer,
             audience=settings.supabase_jwt_audience,
             options=options,

@@ -3,34 +3,21 @@
 ## Projects
 
 Staging
-- Project name: theseedbed-staging
+- Project name: chapterverse-staging
 - Region: us-east-1
 - Project ref: kypwcksvicrbrrwscdze
 
 Production
-- Project name: theseedbed-production
+- Project name: chapterverse-production
 - Region: us-east-1
 - Project ref: aaohmjvcsgyqqlxomegu
 
-## Auth URLs
+## Auth URLs (local dev for now)
 
-Staging (current focus):
-- Site URL: https://staging.theseedbed.app
+- Site URL: http://localhost:3000
 - Redirect URLs:
-  - https://staging.theseedbed.app/**
   - http://localhost:3000/**
   - http://127.0.0.1:3000/**
-
-API (staging):
-- Base URL: https://api.staging.theseedbed.app
-
-Production:
-- Site URL: https://theseedbed.app
-- Redirect URLs:
-  - https://theseedbed.app/**
-
-API (production):
-- Base URL: https://api.theseedbed.app (pending DNS + Render domain)
 
 ## Local development (no shared secrets)
 
@@ -102,4 +89,4 @@ supabase config push
 
 ## Deployment
 
-Hosting uses Vercel for web and Render for the API.
+Hosting platform and env var wiring is pending (no domains yet).

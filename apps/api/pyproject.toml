@@ -1,7 +1,7 @@
 [project]
-name = "theseedbed-api"
+name = "chapterverse-api"
 version = "0.1.0"
-description = "The Seedbed API - FastAPI backend for book tracking"
+description = "ChapterVerse API - FastAPI backend for book tracking"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
