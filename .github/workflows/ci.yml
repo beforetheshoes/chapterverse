@@ -23,11 +23,9 @@ jobs:
         with:
           enable-cache: true
       - name: Start Supabase
-        working-directory: ../..
-        run: make supabase-env
+        run: make -C ../.. supabase-env
       - name: Export Supabase env
-        working-directory: ../..
-        run: cat .env >> $GITHUB_ENV
+        run: cat ../../.env >> $GITHUB_ENV
       - name: Install dependencies
         run: uv sync --extra dev --frozen
       - name: Lint
