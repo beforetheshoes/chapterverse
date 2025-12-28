@@ -14,10 +14,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+      - name: Start Supabase
+        working-directory: ..
+        run: make supabase-env
+      - name: Export Supabase env
+        working-directory: ..
+        run: cat .env >> $GITHUB_ENV
       - name: Install dependencies
         run: uv sync --extra dev --frozen
       - name: Lint
@@ -26,6 +36,8 @@ jobs:
         run: uv run black --check .
       - name: Type check
         run: uv run mypy .
+      - name: Apply migrations
+        run: uv run alembic upgrade head
       - name: Unit tests
         run: uv run pytest
       - name: Build
