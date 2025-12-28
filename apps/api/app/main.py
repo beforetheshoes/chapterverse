@@ -10,8 +10,8 @@ from app.routers import health, protected, version
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
-        title="ChapterVerse API",
-        description="API for the ChapterVerse book tracking application",
+        title="The Seedbed API",
+        description="API for The Seedbed book tracking application",
         version=settings.api_version,
     )
     register_exception_handlers(app)

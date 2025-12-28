@@ -1,4 +1,4 @@
-# ChapterVerse Web
+# The Seedbed Web
 
 Nuxt 4.2.2 frontend using PrimeVue v4 (Aura theme) and Tailwind CSS.
 
