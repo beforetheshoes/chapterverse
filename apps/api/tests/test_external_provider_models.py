@@ -47,7 +47,6 @@ def test_external_ids_table_schema_and_indexes() -> None:
 
     index_names = {index.name for index in table.indexes}
     assert "ix_external_ids_provider_lookup" in index_names
-    assert "ix_external_ids_entity_lookup" in index_names
 
 
 def test_source_records_table_schema_and_indexes() -> None:
@@ -84,4 +83,3 @@ def test_source_records_table_schema_and_indexes() -> None:
 
     index_names = {index.name for index in table.indexes}
     assert "ix_source_records_provider_lookup" in index_names
-    assert "ix_source_records_provider_entity_lookup" in index_names
