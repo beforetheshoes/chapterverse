@@ -48,6 +48,14 @@ supabase-env: supabase-start
 				echo "SUPABASE_ANON_KEY=$$value"; \
 				echo "NUXT_PUBLIC_SUPABASE_ANON_KEY=$$value"; \
 				;; \
+			DB_URL=*) \
+				value="$${line#DB_URL=}"; \
+				echo "SUPABASE_DB_URL=$$value"; \
+				;; \
+			POSTGRES_URL=*) \
+				value="$${line#POSTGRES_URL=}"; \
+				echo "SUPABASE_DB_URL=$$value"; \
+				;; \
 			SERVICE_ROLE_KEY=*) \
 				value="$${line#SERVICE_ROLE_KEY=}"; \
 				echo "SUPABASE_SERVICE_ROLE_KEY=$$value"; \

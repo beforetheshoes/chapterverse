@@ -5,8 +5,8 @@ This is a suggested order of execution based on dependencies and risk.
 ## 1) Foundation
 
 - #29 Initialize Nuxt 3 project with UI library - DONE
-- #18 Set up FastAPI with Supabase JWT verification middleware
-- #7 Configure Alembic for database migrations
+- #18 Set up FastAPI with Supabase JWT verification middleware - DONE
+- #7 Configure Alembic for database migrations - DONE
 
 ## 2) Core data model
 

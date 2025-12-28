@@ -1,6 +1,9 @@
 import os
 from pathlib import Path
 
+import pytest
+
+import app.core.config as config_module
 from app.core.config import _load_dotenv, get_settings, reset_settings_cache
 
 
@@ -104,3 +107,52 @@ def test_load_dotenv_idempotent(tmp_path: Path) -> None:
         os.environ.clear()
         os.environ.update(original_env)
         reset_settings_cache()
+
+
+def test_get_settings_blank_jwt_secret() -> None:
+    original_env = os.environ.copy()
+    try:
+        os.environ["SUPABASE_URL"] = "https://example.supabase.co/"
+        os.environ["SUPABASE_JWT_SECRET"] = "   "
+        os.environ["SUPABASE_JWT_AUDIENCE"] = "authenticated"
+        reset_settings_cache()
+
+        settings = get_settings()
+        assert settings.supabase_jwt_secret is None
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)
+        reset_settings_cache()
+
+
+def test_find_repo_root_prefers_pyproject_when_git_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if self.name == ".git":
+            return False
+        return original_exists(self)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    repo_root = config_module._find_repo_root()
+    assert (repo_root / "pyproject.toml").exists()
+
+
+def test_find_repo_root_fallback_when_no_markers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    original_exists = Path.exists
+    blocked = {".git", "pyproject.toml", "setup.cfg"}
+
+    def fake_exists(self: Path) -> bool:
+        if self.name in blocked:
+            return False
+        return original_exists(self)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    start_dir = Path(config_module.__file__).resolve().parent
+    parents = start_dir.parents
+    expected = start_dir if not parents else parents[min(4, len(parents) - 1)]
+    assert config_module._find_repo_root() == expected
