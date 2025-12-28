@@ -49,7 +49,6 @@ class SourceRecord(Base):
             name="uq_source_records_provider_entity",
         ),
         sa.Index("ix_source_records_provider_lookup", "provider", "provider_id"),
-        sa.Index("ix_source_records_provider_entity_lookup", "provider", "entity_type"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
