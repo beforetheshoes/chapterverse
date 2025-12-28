@@ -47,11 +47,28 @@ def test_work_table_schema() -> None:
 
 def test_edition_table_schema_and_indexes() -> None:
     table = _get_table("editions")
-    assert "work_id" in table.columns
+    assert set(table.columns.keys()) == {
+        "id",
+        "work_id",
+        "isbn10",
+        "isbn13",
+        "publisher",
+        "publish_date",
+        "language",
+        "format",
+        "cover_url",
+        "created_at",
+        "updated_at",
+    }
     assert isinstance(table.columns["isbn10"].type, sa.String)
     assert table.columns["isbn10"].type.length == 10
     assert isinstance(table.columns["isbn13"].type, sa.String)
     assert table.columns["isbn13"].type.length == 13
+    assert isinstance(table.columns["publisher"].type, sa.String)
+    assert isinstance(table.columns["publish_date"].type, sa.Date)
+    assert isinstance(table.columns["language"].type, sa.String)
+    assert isinstance(table.columns["format"].type, sa.String)
+    assert isinstance(table.columns["cover_url"].type, sa.Text)
 
     fk_targets = {fk.column.table.name for fk in table.foreign_keys}
     assert fk_targets == {"works"}
