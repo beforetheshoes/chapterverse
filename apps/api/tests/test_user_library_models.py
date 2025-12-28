@@ -42,6 +42,10 @@ def test_users_table_schema() -> None:
 
     fk_targets = {fk.target_fullname for fk in table.foreign_keys}
     assert "auth.users.id" in fk_targets
+    auth_fk = next(
+        fk for fk in table.foreign_keys if fk.target_fullname == "auth.users.id"
+    )
+    assert auth_fk.ondelete == "CASCADE"
 
     unique_constraints = [
         constraint
@@ -103,15 +107,37 @@ def test_library_items_table_schema() -> None:
     }
     assert ("user_id", "work_id") in unique_sets
 
+    check_constraints = [
+        constraint
+        for constraint in table.constraints
+        if isinstance(constraint, sa.CheckConstraint)
+    ]
+    check_names = {constraint.name for constraint in check_constraints}
+    assert "ck_library_items_rating_range" in check_names
+
     fk_targets = {fk.target_fullname for fk in table.foreign_keys}
     assert "users.id" in fk_targets
     assert "works.id" in fk_targets
     assert "editions.id" in fk_targets
 
+    users_fk = next(fk for fk in table.foreign_keys if fk.target_fullname == "users.id")
+    works_fk = next(fk for fk in table.foreign_keys if fk.target_fullname == "works.id")
+    editions_fk = next(
+        fk for fk in table.foreign_keys if fk.target_fullname == "editions.id"
+    )
+    assert users_fk.ondelete == "CASCADE"
+    assert works_fk.ondelete == "RESTRICT"
+    assert editions_fk.ondelete == "SET NULL"
+
     index_names = {index.name for index in table.indexes}
     assert "ix_library_items_user_id" in index_names
     assert "ix_library_items_status" in index_names
     assert "ix_library_items_visibility" in index_names
+    assert "ix_library_items_tags" in index_names
+    tags_index = next(
+        index for index in table.indexes if index.name == "ix_library_items_tags"
+    )
+    assert tags_index.dialect_options["postgresql"]["using"] == "gin"
 
 
 def test_reading_sessions_table_schema() -> None:
@@ -150,6 +176,22 @@ def test_reading_sessions_table_schema() -> None:
     fk_targets = {fk.target_fullname for fk in table.foreign_keys}
     assert "users.id" in fk_targets
     assert "library_items.id" in fk_targets
+    user_fk = next(fk for fk in table.foreign_keys if fk.target_fullname == "users.id")
+    library_item_fk = next(
+        fk for fk in table.foreign_keys if fk.target_fullname == "library_items.id"
+    )
+    assert user_fk.ondelete == "CASCADE"
+    assert library_item_fk.ondelete == "CASCADE"
+
+    check_constraints = [
+        constraint
+        for constraint in table.constraints
+        if isinstance(constraint, sa.CheckConstraint)
+    ]
+    check_names = {constraint.name for constraint in check_constraints}
+    assert "ck_reading_sessions_pages_read_nonnegative" in check_names
+    assert "ck_reading_sessions_progress_percent_range" in check_names
+    assert "ck_reading_sessions_ended_after_start" in check_names
 
     index_names = {index.name for index in table.indexes}
     assert "ix_reading_sessions_user_id" in index_names
@@ -177,6 +219,12 @@ def test_reading_state_events_table_schema() -> None:
     fk_targets = {fk.target_fullname for fk in table.foreign_keys}
     assert "users.id" in fk_targets
     assert "library_items.id" in fk_targets
+    user_fk = next(fk for fk in table.foreign_keys if fk.target_fullname == "users.id")
+    library_item_fk = next(
+        fk for fk in table.foreign_keys if fk.target_fullname == "library_items.id"
+    )
+    assert user_fk.ondelete == "CASCADE"
+    assert library_item_fk.ondelete == "CASCADE"
 
     index_names = {index.name for index in table.indexes}
     assert "ix_reading_state_events_user_id" in index_names

@@ -42,7 +42,7 @@ def upgrade() -> None:
         sa.Column(
             "id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("auth.users.id"),
+            sa.ForeignKey("auth.users.id", ondelete="CASCADE"),
             primary_key=True,
         ),
         sa.Column("handle", sa.String(64), nullable=False),
@@ -74,19 +74,19 @@ def upgrade() -> None:
         sa.Column(
             "user_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("users.id"),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column(
             "work_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("works.id"),
+            sa.ForeignKey("works.id", ondelete="RESTRICT"),
             nullable=False,
         ),
         sa.Column(
             "preferred_edition_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("editions.id"),
+            sa.ForeignKey("editions.id", ondelete="SET NULL"),
         ),
         sa.Column("status", library_item_status_enum, nullable=False),
         sa.Column("visibility", library_item_visibility_enum, nullable=False),
@@ -109,6 +109,10 @@ def upgrade() -> None:
             "work_id",
             name="uq_library_items_user_work",
         ),
+        sa.CheckConstraint(
+            "rating >= 0 AND rating <= 10",
+            name="ck_library_items_rating_range",
+        ),
     )
     op.create_index("ix_library_items_user_id", "library_items", ["user_id"])
     op.create_index("ix_library_items_status", "library_items", ["status"])
@@ -116,6 +120,12 @@ def upgrade() -> None:
         "ix_library_items_visibility",
         "library_items",
         ["visibility"],
+    )
+    op.create_index(
+        "ix_library_items_tags",
+        "library_items",
+        ["tags"],
+        postgresql_using="gin",
     )
 
     op.create_table(
@@ -129,13 +139,13 @@ def upgrade() -> None:
         sa.Column(
             "user_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("users.id"),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column(
             "library_item_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("library_items.id"),
+            sa.ForeignKey("library_items.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=False),
@@ -154,6 +164,18 @@ def upgrade() -> None:
             sa.DateTime(timezone=True),
             nullable=False,
             server_default=sa.text("now()"),
+        ),
+        sa.CheckConstraint(
+            "pages_read >= 0",
+            name="ck_reading_sessions_pages_read_nonnegative",
+        ),
+        sa.CheckConstraint(
+            "progress_percent >= 0 AND progress_percent <= 100",
+            name="ck_reading_sessions_progress_percent_range",
+        ),
+        sa.CheckConstraint(
+            "ended_at IS NULL OR ended_at >= started_at",
+            name="ck_reading_sessions_ended_after_start",
         ),
     )
     op.create_index(
@@ -178,13 +200,13 @@ def upgrade() -> None:
         sa.Column(
             "user_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("users.id"),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column(
             "library_item_id",
             sa.UUID(as_uuid=True),
-            sa.ForeignKey("library_items.id"),
+            sa.ForeignKey("library_items.id", ondelete="CASCADE"),
             nullable=False,
         ),
         sa.Column("event_type", sa.String(32), nullable=False),
@@ -235,6 +257,7 @@ def downgrade() -> None:
         table_name="reading_sessions",
     )
     op.drop_table("reading_sessions")
+    op.drop_index("ix_library_items_tags", table_name="library_items")
     op.drop_index("ix_library_items_visibility", table_name="library_items")
     op.drop_index("ix_library_items_status", table_name="library_items")
     op.drop_index("ix_library_items_user_id", table_name="library_items")

@@ -31,7 +31,7 @@ class User(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("auth.users.id"),
+        sa.ForeignKey("auth.users.id", ondelete="CASCADE"),
         primary_key=True,
     )
     handle: Mapped[str] = mapped_column(sa.String(64), nullable=False)
@@ -57,9 +57,14 @@ class LibraryItem(Base):
             "work_id",
             name="uq_library_items_user_work",
         ),
+        sa.CheckConstraint(
+            "rating >= 0 AND rating <= 10",
+            name="ck_library_items_rating_range",
+        ),
         sa.Index("ix_library_items_user_id", "user_id"),
         sa.Index("ix_library_items_status", "status"),
         sa.Index("ix_library_items_visibility", "visibility"),
+        sa.Index("ix_library_items_tags", "tags", postgresql_using="gin"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -69,17 +74,17 @@ class LibraryItem(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("users.id"),
+        sa.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     work_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("works.id"),
+        sa.ForeignKey("works.id", ondelete="RESTRICT"),
         nullable=False,
     )
     preferred_edition_id: Mapped[uuid.UUID | None] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("editions.id"),
+        sa.ForeignKey("editions.id", ondelete="SET NULL"),
     )
     status: Mapped[str] = mapped_column(library_item_status_enum, nullable=False)
     visibility: Mapped[str] = mapped_column(
@@ -103,6 +108,18 @@ class LibraryItem(Base):
 class ReadingSession(Base):
     __tablename__ = "reading_sessions"
     __table_args__ = (
+        sa.CheckConstraint(
+            "pages_read >= 0",
+            name="ck_reading_sessions_pages_read_nonnegative",
+        ),
+        sa.CheckConstraint(
+            "progress_percent >= 0 AND progress_percent <= 100",
+            name="ck_reading_sessions_progress_percent_range",
+        ),
+        sa.CheckConstraint(
+            "ended_at IS NULL OR ended_at >= started_at",
+            name="ck_reading_sessions_ended_after_start",
+        ),
         sa.Index("ix_reading_sessions_user_id", "user_id"),
         sa.Index("ix_reading_sessions_library_item_id", "library_item_id"),
     )
@@ -114,12 +131,12 @@ class ReadingSession(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("users.id"),
+        sa.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     library_item_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("library_items.id"),
+        sa.ForeignKey("library_items.id", ondelete="CASCADE"),
         nullable=False,
     )
     started_at: Mapped[dt.datetime] = mapped_column(
@@ -157,12 +174,12 @@ class ReadingStateEvent(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("users.id"),
+        sa.ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
     library_item_id: Mapped[uuid.UUID] = mapped_column(
         sa.UUID(as_uuid=True),
-        sa.ForeignKey("library_items.id"),
+        sa.ForeignKey("library_items.id", ondelete="CASCADE"),
         nullable=False,
     )
     event_type: Mapped[str] = mapped_column(sa.String(32), nullable=False)
