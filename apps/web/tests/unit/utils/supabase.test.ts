@@ -6,7 +6,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: createClientMock,
 }));
 
-import { createSupabaseClient } from '../../../utils/supabase';
+import { createSupabaseClient } from '~/utils/supabase';
 
 describe('createSupabaseClient', () => {
   it('creates a client when config is present', () => {

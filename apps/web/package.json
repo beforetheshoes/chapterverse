@@ -13,8 +13,8 @@
     "format:check": "prettier --check .",
     "test:unit": "vitest run --coverage",
     "test:unit:watch": "vitest",
-    "test:e2e": "start-server-and-test \"pnpm dev\" http://localhost:3000 \"pnpm exec cypress run\"",
-    "test:e2e:open": "start-server-and-test \"pnpm dev\" http://localhost:3000 \"pnpm exec cypress open\""
+    "test:e2e": "start-server-and-test \"NUXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NUXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key pnpm dev\" http://localhost:3000 \"pnpm exec cypress run\"",
+    "test:e2e:open": "start-server-and-test \"NUXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NUXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key pnpm dev\" http://localhost:3000 \"pnpm exec cypress open\""
   },
   "dependencies": {
     "@primevue/nuxt-module": "^4.3.3",
