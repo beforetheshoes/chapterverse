@@ -76,8 +76,8 @@ import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 
-const { $supabase } = useNuxtApp();
-const supabase = $supabase as SupabaseClient | null;
+const nuxtApp = useNuxtApp();
+const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -102,7 +102,7 @@ const showDebug = computed(() => {
 const debugStatus = computed(() => ({
   url: Boolean(config.public.supabaseUrl),
   anonKey: Boolean(config.public.supabaseAnonKey),
-  client: Boolean(supabase),
+  client: Boolean(supabase.value),
 }));
 
 const buildRedirectTo = () => {
@@ -129,7 +129,7 @@ const sendMagicLink = async () => {
   status.value = '';
   error.value = '';
 
-  if (!supabase) {
+  if (!supabase.value) {
     error.value = 'Supabase client is not available.';
     return;
   }
@@ -142,7 +142,7 @@ const sendMagicLink = async () => {
   busy.value = true;
 
   const redirectTo = buildRedirectTo();
-  const { error: signInError } = await supabase.auth.signInWithOtp({
+  const { error: signInError } = await supabase.value.auth.signInWithOtp({
     email: email.value.trim(),
     options: {
       emailRedirectTo: redirectTo,
@@ -163,14 +163,14 @@ const signInWithApple = async () => {
   status.value = '';
   error.value = '';
 
-  if (!supabase) {
+  if (!supabase.value) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
   busy.value = true;
   const redirectTo = buildRedirectTo();
-  const { error: signInError } = await supabase.auth.signInWithOAuth({
+  const { error: signInError } = await supabase.value.auth.signInWithOAuth({
     provider: 'apple',
     options: {
       redirectTo,

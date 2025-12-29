@@ -14,12 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { navigateTo, useNuxtApp, useRoute } from '#imports';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const { $supabase } = useNuxtApp();
-const supabase = $supabase as SupabaseClient | null;
+const nuxtApp = useNuxtApp();
+const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
 const route = useRoute();
 
 const message = ref('Validating your session…');
@@ -29,14 +29,14 @@ const resolveReturnTo = () =>
   typeof route.query.returnTo === 'string' && route.query.returnTo ? route.query.returnTo : '/';
 
 onMounted(async () => {
-  if (!supabase) {
+  if (!supabase.value) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
   const returnTo = resolveReturnTo();
 
-  const { data, error: sessionError } = await supabase.auth.getSession();
+  const { data, error: sessionError } = await supabase.value.auth.getSession();
   if (sessionError) {
     error.value = sessionError.message;
     return;
@@ -49,7 +49,7 @@ onMounted(async () => {
 
   message.value = 'Waiting for authentication to complete…';
 
-  const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+  const { data: authListener } = supabase.value.auth.onAuthStateChange(async (_event, session) => {
     if (session) {
       authListener.subscription.unsubscribe();
       await navigateTo(returnTo);

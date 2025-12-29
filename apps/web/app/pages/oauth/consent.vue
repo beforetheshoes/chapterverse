@@ -104,8 +104,8 @@ type AuthorizationDetails = {
   };
 };
 
-const { $supabase } = useNuxtApp();
-const supabase = $supabase as SupabaseClient | null;
+const nuxtApp = useNuxtApp();
+const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -128,7 +128,10 @@ const scopes = computed(() =>
 );
 
 const getAccessToken = async () => {
-  const { data } = await supabase.auth.getSession();
+  if (!supabase.value) {
+    return null;
+  }
+  const { data } = await supabase.value.auth.getSession();
   return data.session?.access_token ?? null;
 };
 
@@ -138,12 +141,12 @@ const fetchAuthorization = async () => {
     return;
   }
 
-  if (!supabase) {
+  if (!supabase.value) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
-  const { data: userData } = await supabase.auth.getUser();
+  const { data: userData } = await supabase.value.auth.getUser();
   if (!userData.user) {
     await navigateTo({
       path: '/login',
@@ -189,7 +192,7 @@ const fetchAuthorization = async () => {
 };
 
 const submitConsent = async (action: 'approve' | 'deny') => {
-  if (!authorizationId.value || !supabase) {
+  if (!authorizationId.value || !supabase.value) {
     return;
   }
 
