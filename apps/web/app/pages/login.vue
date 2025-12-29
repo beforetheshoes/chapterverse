@@ -55,6 +55,12 @@
             <p v-if="!supabase" class="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
               Supabase client is not configured. Check environment variables.
             </p>
+            <p v-if="showDebug" class="rounded-md bg-slate-100 px-3 py-2 text-xs text-slate-600">
+              Preview debug: supabaseUrl={{ debugStatus.url ? 'set' : 'missing' }},
+              supabaseAnonKey={{ debugStatus.anonKey ? 'set' : 'missing' }}, client={{
+                debugStatus.client ? 'ready' : 'missing'
+              }}.
+            </p>
           </div>
         </template>
       </Card>
@@ -64,7 +70,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useNuxtApp, useRoute } from '#imports';
+import { useNuxtApp, useRoute, useRuntimeConfig } from '#imports';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
@@ -72,6 +78,7 @@ import InputText from 'primevue/inputtext';
 
 const { $supabase } = useNuxtApp();
 const supabase = $supabase as SupabaseClient | null;
+const config = useRuntimeConfig();
 const route = useRoute();
 
 const email = ref('');
@@ -83,12 +90,27 @@ const returnTo = computed(() =>
   typeof route.query.returnTo === 'string' ? route.query.returnTo : '',
 );
 
+const showDebug = computed(() => {
+  if (!globalThis.location) {
+    return false;
+  }
+
+  const host = globalThis.location.hostname ?? '';
+  return host.endsWith('vercel.app') || host.includes('localhost');
+});
+
+const debugStatus = computed(() => ({
+  url: Boolean(config.public.supabaseUrl),
+  anonKey: Boolean(config.public.supabaseAnonKey),
+  client: Boolean(supabase),
+}));
+
 const buildRedirectTo = () => {
-  if (typeof window === 'undefined') {
+  if (!globalThis.location) {
     return '';
   }
 
-  const origin = globalThis.location?.origin;
+  const origin = globalThis.location.origin;
   if (!origin) {
     return '';
   }

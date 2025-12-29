@@ -9,6 +9,12 @@ const authMocks = vi.hoisted(() => ({
 
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
+  config: {
+    public: {
+      supabaseUrl: 'https://example.supabase.co',
+      supabaseAnonKey: 'anon-key',
+    },
+  },
   route: { query: {}, fullPath: '/login' },
 }));
 
@@ -16,6 +22,7 @@ vi.mock('#imports', () => ({
   useNuxtApp: () => ({
     $supabase: state.supabase,
   }),
+  useRuntimeConfig: () => state.config,
   useRoute: () => ({
     query: state.route.query,
     fullPath: state.route.fullPath,
@@ -31,6 +38,12 @@ describe('login page', () => {
       writable: true,
     });
     state.supabase = { auth: authMocks };
+    state.config = {
+      public: {
+        supabaseUrl: 'https://example.supabase.co',
+        supabaseAnonKey: 'anon-key',
+      },
+    };
     state.route = { query: {}, fullPath: '/login' };
     authMocks.signInWithOtp.mockClear();
     authMocks.signInWithOtp.mockResolvedValue({ error: null });
@@ -190,5 +203,97 @@ describe('login page', () => {
         emailRedirectTo: '',
       },
     });
+  });
+
+  it('builds an empty redirect when origin is blank', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: {
+        origin: '',
+        hostname: 'preview.vercel.app',
+      },
+      writable: true,
+    });
+
+    const wrapper = mount(LoginPage, {
+      global: {
+        plugins: [[PrimeVue, { ripple: false }]],
+      },
+    });
+
+    await wrapper.get('[data-test="login-email"]').setValue('reader@theseedbed.app');
+    await wrapper.get('[data-test="login-magic-link"]').trigger('click');
+
+    expect(authMocks.signInWithOtp).toHaveBeenCalledWith({
+      email: 'reader@theseedbed.app',
+      options: {
+        emailRedirectTo: '',
+      },
+    });
+  });
+
+  it('shows a debug banner on preview hosts', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: {
+        origin: 'https://preview.vercel.app',
+        hostname: 'preview.vercel.app',
+      },
+      writable: true,
+    });
+
+    const wrapper = mount(LoginPage, {
+      global: {
+        plugins: [[PrimeVue, { ripple: false }]],
+      },
+    });
+
+    expect(wrapper.text()).toContain('Preview debug:');
+    expect(wrapper.text()).toContain('supabaseUrl=set');
+    expect(wrapper.text()).toContain('supabaseAnonKey=set');
+    expect(wrapper.text()).toContain('client=ready');
+  });
+
+  it('shows missing debug flags when config is unavailable', async () => {
+    state.supabase = null;
+    state.config = {
+      public: {
+        supabaseUrl: '',
+        supabaseAnonKey: '',
+      },
+    };
+    Object.defineProperty(globalThis, 'location', {
+      value: {
+        origin: 'https://preview.vercel.app',
+        hostname: 'preview.vercel.app',
+      },
+      writable: true,
+    });
+
+    const wrapper = mount(LoginPage, {
+      global: {
+        plugins: [[PrimeVue, { ripple: false }]],
+      },
+    });
+
+    expect(wrapper.text()).toContain('supabaseUrl=missing');
+    expect(wrapper.text()).toContain('supabaseAnonKey=missing');
+    expect(wrapper.text()).toContain('client=missing');
+  });
+
+  it('skips the debug banner on production hosts', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: {
+        origin: 'https://theseedbed.app',
+        hostname: 'theseedbed.app',
+      },
+      writable: true,
+    });
+
+    const wrapper = mount(LoginPage, {
+      global: {
+        plugins: [[PrimeVue, { ripple: false }]],
+      },
+    });
+
+    expect(wrapper.text()).not.toContain('Preview debug:');
   });
 });
