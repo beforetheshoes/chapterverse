@@ -1,5 +1,5 @@
 import { createSupabaseClient } from '~/utils/supabase';
-import { useState } from '#imports';
+import { defineNuxtPlugin, useRuntimeConfig, useState } from '#imports';
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig();
