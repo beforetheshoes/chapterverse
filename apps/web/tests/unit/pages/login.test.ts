@@ -9,6 +9,7 @@ const authMocks = vi.hoisted(() => ({
 
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
+  supabaseState: { value: null },
   config: {
     public: {
       supabaseUrl: 'https://example.supabase.co',
@@ -22,6 +23,12 @@ vi.mock('#imports', () => ({
   useNuxtApp: () => ({
     $supabase: state.supabase,
   }),
+  useState: (_key: string, init?: () => unknown) => {
+    if (state.supabaseState.value === null && init) {
+      state.supabaseState.value = init();
+    }
+    return state.supabaseState;
+  },
   useRuntimeConfig: () => state.config,
   useRoute: () => ({
     query: state.route.query,
@@ -38,6 +45,7 @@ describe('login page', () => {
       writable: true,
     });
     state.supabase = { auth: authMocks };
+    state.supabaseState.value = state.supabase;
     state.config = {
       public: {
         supabaseUrl: 'https://example.supabase.co',
@@ -140,6 +148,7 @@ describe('login page', () => {
 
   it('shows an error when Supabase is unavailable for magic links', async () => {
     state.supabase = null;
+    state.supabaseState.value = null;
 
     const wrapper = mount(LoginPage, {
       global: {
@@ -170,6 +179,7 @@ describe('login page', () => {
 
   it('falls back when Supabase client is missing', async () => {
     state.supabase = null;
+    state.supabaseState.value = null;
 
     const wrapper = mount(LoginPage, {
       global: {
@@ -254,6 +264,7 @@ describe('login page', () => {
 
   it('shows missing debug flags when config is unavailable', async () => {
     state.supabase = null;
+    state.supabaseState.value = null;
     state.config = {
       public: {
         supabaseUrl: '',

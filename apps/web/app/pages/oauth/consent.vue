@@ -83,7 +83,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { navigateTo, useNuxtApp, useRoute, useRuntimeConfig } from '#imports';
+import { navigateTo, useRoute, useRuntimeConfig, useState } from '#imports';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
@@ -104,8 +104,7 @@ type AuthorizationDetails = {
   };
 };
 
-const nuxtApp = useNuxtApp();
-const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
+const supabase = useState<SupabaseClient | null>('supabase', () => null);
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -128,9 +127,6 @@ const scopes = computed(() =>
 );
 
 const getAccessToken = async () => {
-  if (!supabase.value) {
-    return null;
-  }
   const { data } = await supabase.value.auth.getSession();
   return data.session?.access_token ?? null;
 };

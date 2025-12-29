@@ -14,12 +14,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
-import { navigateTo, useNuxtApp, useRoute } from '#imports';
+import { onMounted, ref } from 'vue';
+import { navigateTo, useRoute, useState } from '#imports';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const nuxtApp = useNuxtApp();
-const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
+const supabase = useState<SupabaseClient | null>('supabase', () => null);
 const route = useRoute();
 
 const message = ref('Validating your session…');

@@ -70,14 +70,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useNuxtApp, useRoute, useRuntimeConfig } from '#imports';
+import { useRoute, useRuntimeConfig, useState } from '#imports';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 
-const nuxtApp = useNuxtApp();
-const supabase = computed(() => (nuxtApp.$supabase as SupabaseClient | null) ?? null);
+const supabase = useState<SupabaseClient | null>('supabase', () => null);
 const config = useRuntimeConfig();
 const route = useRoute();
 

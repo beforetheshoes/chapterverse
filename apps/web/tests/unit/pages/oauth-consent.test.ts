@@ -15,6 +15,7 @@ const navigateToMock = vi.hoisted(() => vi.fn());
 
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
+  supabaseState: { value: null },
   config: {
     public: {
       supabaseUrl: 'https://example.supabase.co',
@@ -31,6 +32,12 @@ vi.mock('#imports', () => ({
   useNuxtApp: () => ({
     $supabase: state.supabase,
   }),
+  useState: (_key: string, init?: () => unknown) => {
+    if (state.supabaseState.value === null && init) {
+      state.supabaseState.value = init();
+    }
+    return state.supabaseState;
+  },
   useRuntimeConfig: () => state.config,
   useRoute: () => state.route,
   navigateTo: navigateToMock,
@@ -60,6 +67,7 @@ describe('oauth consent page', () => {
     }) as typeof globalThis.fetch;
 
     state.supabase = { auth: authMocks };
+    state.supabaseState.value = state.supabase;
     state.config = {
       public: {
         supabaseUrl: 'https://example.supabase.co',
@@ -131,6 +139,7 @@ describe('oauth consent page', () => {
 
   it('shows an error when Supabase client is missing', async () => {
     state.supabase = null;
+    state.supabaseState.value = null;
 
     const wrapper = mount(ConsentPage, {
       global: {

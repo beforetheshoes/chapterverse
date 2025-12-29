@@ -20,6 +20,7 @@ const navigateToMock = vi.hoisted(() => vi.fn());
 
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
+  supabaseState: { value: null },
   route: { query: { returnTo: '/oauth/consent?authorization_id=auth-123' } },
 }));
 
@@ -27,6 +28,12 @@ vi.mock('#imports', () => ({
   useNuxtApp: () => ({
     $supabase: state.supabase,
   }),
+  useState: (_key: string, init?: () => unknown) => {
+    if (state.supabaseState.value === null && init) {
+      state.supabaseState.value = init();
+    }
+    return state.supabaseState;
+  },
   useRoute: () => ({
     query: state.route.query,
   }),
@@ -38,6 +45,7 @@ import CallbackPage from '../../../app/pages/auth/callback.vue';
 describe('auth callback page', () => {
   beforeEach(() => {
     state.supabase = { auth: authMocks };
+    state.supabaseState.value = state.supabase;
     state.route = { query: { returnTo: '/oauth/consent?authorization_id=auth-123' } };
     navigateToMock.mockClear();
     authMocks.getSession.mockResolvedValue({
@@ -68,6 +76,7 @@ describe('auth callback page', () => {
 
   it('shows an error when Supabase is not available', async () => {
     state.supabase = null;
+    state.supabaseState.value = null;
 
     const wrapper = mount(CallbackPage, {
       global: {
