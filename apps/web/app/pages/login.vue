@@ -59,7 +59,7 @@
               Preview debug: supabaseUrl={{ debugStatus.url ? 'set' : 'missing' }},
               supabaseAnonKey={{ debugStatus.anonKey ? 'set' : 'missing' }}, client={{
                 debugStatus.client ? 'ready' : 'missing'
-              }}.
+              }}, plugin={{ debugStatus.plugin ? 'loaded' : 'missing' }}.
             </p>
           </div>
         </template>
@@ -77,6 +77,7 @@ import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 
 const supabase = useState<SupabaseClient | null>('supabase', () => null);
+const supabasePluginLoaded = useState<boolean>('supabasePluginLoaded', () => false);
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -102,6 +103,7 @@ const debugStatus = computed(() => ({
   url: Boolean(config.public.supabaseUrl),
   anonKey: Boolean(config.public.supabaseAnonKey),
   client: Boolean(supabase.value),
+  plugin: Boolean(supabasePluginLoaded.value),
 }));
 
 const buildRedirectTo = () => {

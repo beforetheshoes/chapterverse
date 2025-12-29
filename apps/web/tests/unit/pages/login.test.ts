@@ -10,6 +10,7 @@ const authMocks = vi.hoisted(() => ({
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
   supabaseState: { value: null },
+  supabasePluginLoaded: { value: null },
   config: {
     public: {
       supabaseUrl: 'https://example.supabase.co',
@@ -23,11 +24,13 @@ vi.mock('#imports', () => ({
   useNuxtApp: () => ({
     $supabase: state.supabase,
   }),
-  useState: (_key: string, init?: () => unknown) => {
-    if (state.supabaseState.value === null && init) {
-      state.supabaseState.value = init();
+  useState: (key: string, init?: () => unknown) => {
+    const target =
+      key === 'supabasePluginLoaded' ? state.supabasePluginLoaded : state.supabaseState;
+    if (target.value === null && init) {
+      target.value = init();
     }
-    return state.supabaseState;
+    return target;
   },
   useRuntimeConfig: () => state.config,
   useRoute: () => ({
@@ -46,6 +49,7 @@ describe('login page', () => {
     });
     state.supabase = { auth: authMocks };
     state.supabaseState.value = state.supabase;
+    state.supabasePluginLoaded.value = null;
     state.config = {
       public: {
         supabaseUrl: 'https://example.supabase.co',
@@ -242,6 +246,7 @@ describe('login page', () => {
   });
 
   it('shows a debug banner on preview hosts', async () => {
+    state.supabasePluginLoaded.value = true;
     Object.defineProperty(globalThis, 'location', {
       value: {
         origin: 'https://preview.vercel.app',
@@ -260,11 +265,13 @@ describe('login page', () => {
     expect(wrapper.text()).toContain('supabaseUrl=set');
     expect(wrapper.text()).toContain('supabaseAnonKey=set');
     expect(wrapper.text()).toContain('client=ready');
+    expect(wrapper.text()).toContain('plugin=loaded');
   });
 
   it('shows missing debug flags when config is unavailable', async () => {
     state.supabase = null;
     state.supabaseState.value = null;
+    state.supabasePluginLoaded.value = false;
     state.config = {
       public: {
         supabaseUrl: '',
@@ -288,6 +295,7 @@ describe('login page', () => {
     expect(wrapper.text()).toContain('supabaseUrl=missing');
     expect(wrapper.text()).toContain('supabaseAnonKey=missing');
     expect(wrapper.text()).toContain('client=missing');
+    expect(wrapper.text()).toContain('plugin=missing');
   });
 
   it('skips the debug banner on production hosts', async () => {

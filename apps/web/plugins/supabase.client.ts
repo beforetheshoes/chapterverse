@@ -8,6 +8,7 @@ export default defineNuxtPlugin(() => {
     'supabase',
     () => null,
   );
+  const supabasePluginLoaded = useState<boolean>('supabasePluginLoaded', () => false);
   const supabase =
     supabaseUrl && supabaseAnonKey
       ? createSupabaseClient({ url: supabaseUrl, anonKey: supabaseAnonKey })
@@ -18,6 +19,7 @@ export default defineNuxtPlugin(() => {
   }
 
   supabaseState.value = supabase;
+  supabasePluginLoaded.value = true;
 
   return {
     provide: {
