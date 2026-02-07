@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 from dataclasses import dataclass
 from typing import Annotated, Any, cast
 
@@ -23,6 +24,13 @@ class AuthError(Exception):
     message: str
     status_code: int = 401
     details: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class AuthContext:
+    claims: dict[str, Any]
+    client_id: uuid.UUID | None
+    user_id: uuid.UUID
 
 
 _jwks_cache: JWKSCache | None = None
@@ -190,3 +198,58 @@ async def require_jwt(
             message="Authorization header must be a Bearer token.",
         )
     return await decode_jwt(token, settings=settings, jwks_cache=jwks_cache)
+
+
+def _parse_uuid_claim(claims: dict[str, Any], key: str) -> uuid.UUID:
+    value = claims.get(key)
+    if value is None:
+        raise AuthError(
+            code=f"missing_{key}_claim",
+            message=f"JWT is missing required '{key}' claim.",
+        )
+    if not isinstance(value, str) or not value.strip():
+        raise AuthError(
+            code=f"invalid_{key}_claim",
+            message=f"JWT '{key}' claim must be a non-empty UUID string.",
+        )
+    try:
+        return uuid.UUID(value)
+    except ValueError as exc:
+        raise AuthError(
+            code=f"invalid_{key}_claim",
+            message=f"JWT '{key}' claim must be a valid UUID.",
+        ) from exc
+
+
+def _parse_optional_uuid_claim(claims: dict[str, Any], key: str) -> uuid.UUID | None:
+    value = claims.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise AuthError(
+            code=f"invalid_{key}_claim",
+            message=f"JWT '{key}' claim must be a non-empty UUID string.",
+        )
+    try:
+        return uuid.UUID(value)
+    except ValueError as exc:
+        raise AuthError(
+            code=f"invalid_{key}_claim",
+            message=f"JWT '{key}' claim must be a valid UUID.",
+        ) from exc
+
+
+async def require_auth_context(
+    claims: Annotated[dict[str, Any], Depends(require_jwt)],
+) -> AuthContext:
+    user_id = _parse_uuid_claim(claims, "sub")
+    client_id = _parse_optional_uuid_claim(claims, "client_id")
+    return AuthContext(claims=claims, client_id=client_id, user_id=user_id)
+
+
+async def require_client_auth_context(
+    claims: Annotated[dict[str, Any], Depends(require_jwt)],
+) -> AuthContext:
+    client_id = _parse_uuid_claim(claims, "client_id")
+    user_id = _parse_uuid_claim(claims, "sub")
+    return AuthContext(claims=claims, client_id=client_id, user_id=user_id)

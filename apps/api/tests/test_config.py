@@ -21,6 +21,12 @@ def test_get_settings_blank_audience_and_reset_cache() -> None:
         assert settings.supabase_jwt_audience is None
         assert settings.supabase_jwt_secret == "local-secret"
         assert settings.supabase_jwks_cache_ttl_seconds == 120
+        assert settings.cors_allowed_origins == (
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+        )
         assert settings.api_version == "9.9.9"
     finally:
         os.environ.clear()
@@ -37,6 +43,26 @@ def test_get_settings_invalid_ttl_defaults() -> None:
 
         settings = config_module.get_settings()
         assert settings.supabase_jwks_cache_ttl_seconds == 300
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)
+        config_module.reset_settings_cache()
+
+
+def test_get_settings_custom_cors_origins() -> None:
+    original_env = os.environ.copy()
+    try:
+        os.environ["SUPABASE_URL"] = "https://example.supabase.co/"
+        os.environ["CORS_ALLOW_ORIGINS"] = (
+            "https://app.example.com, https://admin.example.com "
+        )
+        config_module.reset_settings_cache()
+
+        settings = config_module.get_settings()
+        assert settings.cors_allowed_origins == (
+            "https://app.example.com",
+            "https://admin.example.com",
+        )
     finally:
         os.environ.clear()
         os.environ.update(original_env)
