@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rate_limit import enforce_client_user_rate_limit
 from app.core.responses import ok
-from app.core.security import AuthContext, require_client_auth_context
+from app.core.security import AuthContext, require_auth_context
 from app.db.session import get_db_session
 from app.services.user_library import get_or_create_profile, update_profile
 
@@ -28,7 +28,7 @@ router = APIRouter(
 
 @router.get("")
 def get_me(
-    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, object]:
     profile = get_or_create_profile(session, user_id=auth.user_id)
@@ -45,7 +45,7 @@ def get_me(
 @router.patch("")
 def patch_me(
     payload: UpdateProfileRequest,
-    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, object]:
     try:

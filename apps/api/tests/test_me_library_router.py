@@ -10,7 +10,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.core.rate_limit import enforce_client_user_rate_limit
-from app.core.security import AuthContext, require_client_auth_context
+from app.core.security import AuthContext, require_auth_context
 from app.db.session import get_db_session
 from app.routers.library import router as library_router
 from app.routers.me import router as me_router
@@ -23,7 +23,7 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Generator[FastAPI, None, None]:
     app.include_router(library_router)
 
     user_id = uuid.UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-    app.dependency_overrides[require_client_auth_context] = lambda: AuthContext(
+    app.dependency_overrides[require_auth_context] = lambda: AuthContext(
         claims={},
         client_id=uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
         user_id=user_id,

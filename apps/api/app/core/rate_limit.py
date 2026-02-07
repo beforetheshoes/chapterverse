@@ -11,7 +11,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request
 
-from app.core.security import AuthContext, require_client_auth_context
+from app.core.security import AuthContext, require_auth_context
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,7 @@ class InMemoryRateLimiter:
 
 
 _rate_limiter = InMemoryRateLimiter()
+_FIRST_PARTY_WEB_CLIENT_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
 
 def _parse_positive_int(value: str | None, *, fallback: int) -> int:
@@ -119,17 +120,10 @@ def _resolve_limit(config: RateLimitConfig, request: Request) -> int:
 
 def enforce_client_user_rate_limit(
     request: Request,
-    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_auth_context)],
     config: Annotated[RateLimitConfig, Depends(get_rate_limit_config)],
 ) -> None:
-    if auth.client_id is None:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "code": "missing_client_id_claim",
-                "message": "JWT 'client_id' claim is required.",
-            },
-        )
+    client_id = auth.client_id or _FIRST_PARTY_WEB_CLIENT_ID
 
     if config.default_limit <= 0:
         return
@@ -137,7 +131,7 @@ def enforce_client_user_rate_limit(
     endpoint_key = f"{request.method.upper()} {request.url.path}"
     limit = _resolve_limit(config, request)
     retry_after = _rate_limiter.check(
-        key=(auth.client_id, auth.user_id, endpoint_key),
+        key=(client_id, auth.user_id, endpoint_key),
         limit=limit,
         window_seconds=config.window_seconds,
     )
@@ -145,7 +139,7 @@ def enforce_client_user_rate_limit(
         return
 
     request.state.rate_limit_event = {
-        "client_id": auth.client_id,
+        "client_id": client_id,
         "user_id": auth.user_id,
         "method": request.method.upper(),
         "path": request.url.path,
@@ -160,7 +154,7 @@ def enforce_client_user_rate_limit(
             "code": "rate_limited",
             "message": "Rate limit exceeded.",
             "details": {
-                "client_id": str(auth.client_id),
+                "client_id": str(client_id),
                 "user_id": str(auth.user_id),
                 "limit": limit,
                 "window_seconds": config.window_seconds,
