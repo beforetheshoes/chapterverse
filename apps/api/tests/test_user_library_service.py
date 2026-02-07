@@ -12,8 +12,10 @@ from app.services.user_library import (
     _default_handle,
     _encode_cursor,
     create_or_get_library_item,
+    delete_library_item,
     get_or_create_profile,
     list_library_items,
+    update_library_item,
     update_profile,
 )
 
@@ -32,6 +34,7 @@ class FakeSession:
         self.scalar_values: list[Any] = []
         self.added: list[Any] = []
         self.execute_rows: list[tuple[Any, str]] = []
+        self.deleted: list[Any] = []
         self.committed = False
 
     def get(self, model: type[Any], key: Any) -> Any:
@@ -54,6 +57,9 @@ class FakeSession:
 
     def execute(self, _stmt: Any) -> FakeExecuteResult:
         return FakeExecuteResult(self.execute_rows)
+
+    def delete(self, obj: Any) -> None:
+        self.deleted.append(obj)
 
 
 def test_cursor_encode_decode_roundtrip() -> None:
@@ -230,6 +236,8 @@ def test_list_library_items_invalid_cursor() -> None:
             limit=10,
             cursor="bad",
             status=None,
+            tag=None,
+            visibility=None,
         )
 
 
@@ -270,6 +278,88 @@ def test_list_library_items_returns_cursor() -> None:
         limit=1,
         cursor=None,
         status="reading",
+        tag=None,
+        visibility=None,
     )
     assert len(result["items"]) == 1
     assert result["next_cursor"] is not None
+
+
+def test_update_library_item_requires_at_least_one_field() -> None:
+    session = FakeSession()
+    with pytest.raises(ValueError):
+        update_library_item(
+            cast(Any, session),
+            user_id=uuid.uuid4(),
+            item_id=uuid.uuid4(),
+            updates={},
+        )
+
+
+def test_update_library_item_requires_ownership() -> None:
+    session = FakeSession()
+    session.scalar_values = [None]
+    with pytest.raises(LookupError):
+        update_library_item(
+            cast(Any, session),
+            user_id=uuid.uuid4(),
+            item_id=uuid.uuid4(),
+            updates={"status": "reading"},
+        )
+
+
+def test_update_library_item_applies_requested_fields() -> None:
+    session = FakeSession()
+    item = type(
+        "Item",
+        (),
+        {
+            "id": uuid.uuid4(),
+            "work_id": uuid.uuid4(),
+            "status": "to_read",
+            "visibility": "private",
+            "rating": None,
+            "tags": [],
+            "preferred_edition_id": None,
+        },
+    )()
+    session.scalar_values = [item]
+
+    updated = update_library_item(
+        cast(Any, session),
+        user_id=uuid.uuid4(),
+        item_id=item.id,
+        updates={"status": "reading", "rating": 9, "tags": ["memoir"]},
+    )
+
+    assert updated is item
+    assert item.status == "reading"
+    assert item.rating == 9
+    assert item.tags == ["memoir"]
+    assert session.committed is True
+
+
+def test_delete_library_item_requires_ownership() -> None:
+    session = FakeSession()
+    session.scalar_values = [None]
+    with pytest.raises(LookupError):
+        delete_library_item(
+            cast(Any, session),
+            user_id=uuid.uuid4(),
+            item_id=uuid.uuid4(),
+        )
+
+
+def test_delete_library_item_deletes_and_commits() -> None:
+    session = FakeSession()
+    item = object()
+    session.scalar_values = [item]
+
+    delete_library_item(
+        cast(Any, session),
+        user_id=uuid.uuid4(),
+        item_id=uuid.uuid4(),
+    )
+
+    assert session.deleted == [item]
+    assert session.committed is True
