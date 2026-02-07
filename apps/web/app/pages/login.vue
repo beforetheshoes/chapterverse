@@ -70,14 +70,12 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRoute, useRuntimeConfig, useState } from '#imports';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { useRoute, useRuntimeConfig, useSupabaseClient } from '#imports';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 
-const supabase = useState<SupabaseClient | null>('supabase', () => null);
-const supabasePluginLoaded = useState<boolean>('supabasePluginLoaded', () => false);
+const supabase = useSupabaseClient();
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -102,8 +100,8 @@ const showDebug = computed(() => {
 const debugStatus = computed(() => ({
   url: Boolean(config.public.supabaseUrl),
   anonKey: Boolean(config.public.supabaseAnonKey),
-  client: Boolean(supabase.value),
-  plugin: Boolean(supabasePluginLoaded.value),
+  client: Boolean(supabase),
+  plugin: true,
 }));
 
 const buildRedirectTo = () => {
@@ -130,7 +128,7 @@ const sendMagicLink = async () => {
   status.value = '';
   error.value = '';
 
-  if (!supabase.value) {
+  if (!supabase) {
     error.value = 'Supabase client is not available.';
     return;
   }
@@ -143,7 +141,7 @@ const sendMagicLink = async () => {
   busy.value = true;
 
   const redirectTo = buildRedirectTo();
-  const { error: signInError } = await supabase.value.auth.signInWithOtp({
+  const { error: signInError } = await supabase.auth.signInWithOtp({
     email: email.value.trim(),
     options: {
       emailRedirectTo: redirectTo,
@@ -164,14 +162,14 @@ const signInWithApple = async () => {
   status.value = '';
   error.value = '';
 
-  if (!supabase.value) {
+  if (!supabase) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
   busy.value = true;
   const redirectTo = buildRedirectTo();
-  const { error: signInError } = await supabase.value.auth.signInWithOAuth({
+  const { error: signInError } = await supabase.auth.signInWithOAuth({
     provider: 'apple',
     options: {
       redirectTo,

@@ -83,8 +83,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { navigateTo, useRoute, useRuntimeConfig, useState } from '#imports';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { navigateTo, useRoute, useRuntimeConfig, useSupabaseClient } from '#imports';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 
@@ -104,7 +103,7 @@ type AuthorizationDetails = {
   };
 };
 
-const supabase = useState<SupabaseClient | null>('supabase', () => null);
+const supabase = useSupabaseClient();
 const config = useRuntimeConfig();
 const route = useRoute();
 
@@ -127,7 +126,7 @@ const scopes = computed(() =>
 );
 
 const getAccessToken = async () => {
-  const { data } = await supabase.value.auth.getSession();
+  const { data } = await supabase.auth.getSession();
   return data.session?.access_token ?? null;
 };
 
@@ -137,12 +136,12 @@ const fetchAuthorization = async () => {
     return;
   }
 
-  if (!supabase.value) {
+  if (!supabase) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
-  const { data: userData } = await supabase.value.auth.getUser();
+  const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) {
     await navigateTo({
       path: '/login',
@@ -188,7 +187,7 @@ const fetchAuthorization = async () => {
 };
 
 const submitConsent = async (action: 'approve' | 'deny') => {
-  if (!authorizationId.value || !supabase.value) {
+  if (!authorizationId.value || !supabase) {
     return;
   }
 

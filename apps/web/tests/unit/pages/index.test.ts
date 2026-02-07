@@ -9,6 +9,7 @@ describe('index page', () => {
     const wrapper = mount(IndexPage, {
       global: {
         plugins: [[PrimeVue, { ripple: false }]],
+        stubs: { NuxtLink: { template: '<a><slot /></a>' } },
       },
     });
 

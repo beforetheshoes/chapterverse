@@ -15,10 +15,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { navigateTo, useRoute, useState } from '#imports';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { navigateTo, useRoute, useSupabaseClient } from '#imports';
 
-const supabase = useState<SupabaseClient | null>('supabase', () => null);
+const supabase = useSupabaseClient();
 const route = useRoute();
 
 const message = ref('Validating your session…');
@@ -28,14 +27,14 @@ const resolveReturnTo = () =>
   typeof route.query.returnTo === 'string' && route.query.returnTo ? route.query.returnTo : '/';
 
 onMounted(async () => {
-  if (!supabase.value) {
+  if (!supabase) {
     error.value = 'Supabase client is not available.';
     return;
   }
 
   const returnTo = resolveReturnTo();
 
-  const { data, error: sessionError } = await supabase.value.auth.getSession();
+  const { data, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) {
     error.value = sessionError.message;
     return;
@@ -48,7 +47,7 @@ onMounted(async () => {
 
   message.value = 'Waiting for authentication to complete…';
 
-  const { data: authListener } = supabase.value.auth.onAuthStateChange(async (_event, session) => {
+  const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
     if (session) {
       authListener.subscription.unsubscribe();
       await navigateTo(returnTo);
