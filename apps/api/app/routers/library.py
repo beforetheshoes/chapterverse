@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rate_limit import enforce_client_user_rate_limit
 from app.core.responses import ok
-from app.core.security import AuthContext, require_auth_context
+from app.core.security import AuthContext, require_client_auth_context
 from app.db.session import get_db_session
 from app.services.user_library import (
     create_or_get_library_item,
@@ -45,7 +45,7 @@ router = APIRouter(
 
 @router.get("")
 def list_items(
-    auth: Annotated[AuthContext, Depends(require_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     cursor: str | None = None,
@@ -71,7 +71,7 @@ def list_items(
 @router.post("")
 def create_item(
     payload: CreateLibraryItemRequest,
-    auth: Annotated[AuthContext, Depends(require_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, object]:
     try:
@@ -105,7 +105,7 @@ def create_item(
 def patch_item(
     item_id: uuid.UUID,
     payload: UpdateLibraryItemRequest,
-    auth: Annotated[AuthContext, Depends(require_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, object]:
     updates = payload.model_dump(exclude_unset=True)
@@ -136,7 +136,7 @@ def patch_item(
 @router.delete("/{item_id}")
 def remove_item(
     item_id: uuid.UUID,
-    auth: Annotated[AuthContext, Depends(require_auth_context)],
+    auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, object]:
     try:

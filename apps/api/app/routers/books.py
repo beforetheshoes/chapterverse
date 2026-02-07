@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rate_limit import enforce_client_user_rate_limit
 from app.core.responses import ok
-from app.core.security import AuthContext, require_auth_context
+from app.core.security import AuthContext, require_client_auth_context
 from app.db.session import get_db_session
 from app.services.catalog import import_openlibrary_bundle
 from app.services.open_library import OpenLibraryClient
@@ -34,7 +34,7 @@ router = APIRouter(
 @router.get("/search")
 async def search_books(
     query: Annotated[str, Query(min_length=1)],
-    _auth: Annotated[AuthContext, Depends(require_auth_context)],
+    _auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     open_library: Annotated[OpenLibraryClient, Depends(get_open_library_client)],
     limit: Annotated[int, Query(ge=1, le=50)] = 10,
     page: Annotated[int, Query(ge=1)] = 1,
@@ -69,7 +69,7 @@ async def search_books(
 @router.post("/import")
 async def import_book(
     payload: ImportBookRequest,
-    _auth: Annotated[AuthContext, Depends(require_auth_context)],
+    _auth: Annotated[AuthContext, Depends(require_client_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
     open_library: Annotated[OpenLibraryClient, Depends(get_open_library_client)],
 ) -> dict[str, object]:
