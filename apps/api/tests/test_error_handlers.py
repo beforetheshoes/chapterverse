@@ -95,3 +95,16 @@ def test_unhandled_exception_handler_sets_cors_header_for_allowed_origin() -> No
     )
     assert response.status_code == 500
     assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
+
+
+def test_unhandled_exception_handler_sets_cors_header_for_staging_origin() -> None:
+    exc = Exception("boom")
+    response = unhandled_exception_handler(
+        _request_with_origin("https://staging.theseedbed.app"),
+        exc,
+    )
+    assert response.status_code == 500
+    assert (
+        response.headers["Access-Control-Allow-Origin"]
+        == "https://staging.theseedbed.app"
+    )

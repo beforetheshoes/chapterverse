@@ -26,6 +26,9 @@ def test_get_settings_blank_audience_and_reset_cache() -> None:
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
+            "https://staging.theseedbed.app",
+            "https://theseedbed.app",
+            "https://www.theseedbed.app",
         )
         assert settings.api_version == "9.9.9"
     finally:

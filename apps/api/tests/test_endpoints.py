@@ -28,3 +28,19 @@ def test_cors_preflight_for_library_endpoint() -> None:
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+def test_cors_preflight_for_library_endpoint_staging_origin() -> None:
+    client = TestClient(create_app())
+    response = client.options(
+        "/api/v1/library/items?limit=10",
+        headers={
+            "Origin": "https://staging.theseedbed.app",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert (
+        response.headers["access-control-allow-origin"]
+        == "https://staging.theseedbed.app"
+    )
