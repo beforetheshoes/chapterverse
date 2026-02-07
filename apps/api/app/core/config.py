@@ -13,6 +13,12 @@ class Settings:
     supabase_jwt_secret: str | None
     supabase_jwks_cache_ttl_seconds: int
     api_version: str
+    cors_allowed_origins: tuple[str, ...] = (
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    )
 
 
 _dotenv_loaded = False
@@ -90,6 +96,18 @@ def _parse_ttl_seconds() -> int:
         return default_ttl
 
 
+def _parse_cors_origins() -> tuple[str, ...]:
+    raw_origins = os.getenv("CORS_ALLOW_ORIGINS", "").strip()
+    if not raw_origins:
+        return (
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+        )
+    return tuple(origin.strip() for origin in raw_origins.split(",") if origin.strip())
+
+
 @lru_cache
 def get_settings() -> Settings:
     """Settings are cached; call reset_settings_cache when env values change."""
@@ -102,12 +120,14 @@ def get_settings() -> Settings:
     if not jwt_secret:
         jwt_secret = None
     ttl_seconds = _parse_ttl_seconds()
+    cors_allowed_origins = _parse_cors_origins()
     api_version = os.getenv("API_VERSION", "0.1.0").strip()
     return Settings(
         supabase_url=supabase_url,
         supabase_jwt_audience=audience,
         supabase_jwt_secret=jwt_secret,
         supabase_jwks_cache_ttl_seconds=ttl_seconds,
+        cors_allowed_origins=cors_allowed_origins,
         api_version=api_version,
     )
 

@@ -2,6 +2,7 @@ import asyncio
 import base64
 import json
 import time
+import uuid
 from collections.abc import Generator
 from typing import cast
 
@@ -111,40 +112,61 @@ def _build_ec_jwks() -> dict[str, object]:
     return {"keys": [public_jwk]}
 
 
-def _make_token(audience: str = "authenticated") -> str:
+def _make_token(
+    audience: str = "authenticated",
+    *,
+    client_id: str | None = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    sub: str = "11111111-1111-1111-1111-111111111111",
+) -> str:
     issuer = f"{SUPABASE_URL}/auth/v1"
     payload = {
-        "sub": "user-123",
+        "sub": sub,
         "aud": audience,
         "iss": issuer,
         "exp": int(time.time()) + 3600,
     }
+    if client_id is not None:
+        payload["client_id"] = client_id
     token = jwt.encode(
         payload, RSA_PRIVATE_KEY, algorithm="RS256", headers={"kid": KID}
     )
     return cast(str, token)
 
 
-def _make_es256_token(audience: str = "authenticated") -> str:
+def _make_es256_token(
+    audience: str = "authenticated",
+    *,
+    client_id: str | None = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    sub: str = "11111111-1111-1111-1111-111111111111",
+) -> str:
     issuer = f"{SUPABASE_URL}/auth/v1"
     payload = {
-        "sub": "user-123",
+        "sub": sub,
         "aud": audience,
         "iss": issuer,
         "exp": int(time.time()) + 3600,
     }
+    if client_id is not None:
+        payload["client_id"] = client_id
     token = jwt.encode(payload, EC_PRIVATE_KEY, algorithm="ES256", headers={"kid": KID})
     return cast(str, token)
 
 
-def _make_hs256_token(audience: str = "authenticated") -> str:
+def _make_hs256_token(
+    audience: str = "authenticated",
+    *,
+    client_id: str | None = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    sub: str = "11111111-1111-1111-1111-111111111111",
+) -> str:
     issuer = f"{SUPABASE_URL}/auth/v1"
     payload = {
-        "sub": "user-123",
+        "sub": sub,
         "aud": audience,
         "iss": issuer,
         "exp": int(time.time()) + 3600,
     }
+    if client_id is not None:
+        payload["client_id"] = client_id
     token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
     return cast(str, token)
 
@@ -189,7 +211,7 @@ def test_decode_jwt_success() -> None:
     cache = JWKSCache(fetcher=fetcher, ttl_seconds=60)
     token = _make_token()
     payload = asyncio.run(decode_jwt(token, settings=_settings(), jwks_cache=cache))
-    assert payload["sub"] == "user-123"
+    assert payload["sub"] == "11111111-1111-1111-1111-111111111111"
 
 
 def test_decode_jwt_es256_success() -> None:
@@ -201,7 +223,7 @@ def test_decode_jwt_es256_success() -> None:
     cache = JWKSCache(fetcher=fetcher, ttl_seconds=60)
     token = _make_es256_token()
     payload = asyncio.run(decode_jwt(token, settings=_settings(), jwks_cache=cache))
-    assert payload["sub"] == "user-123"
+    assert payload["sub"] == "11111111-1111-1111-1111-111111111111"
 
 
 def test_decode_jwt_hs256_success() -> None:
@@ -213,7 +235,7 @@ def test_decode_jwt_hs256_success() -> None:
     payload = asyncio.run(
         decode_jwt(token, settings=_settings_with_secret(), jwks_cache=cache)
     )
-    assert payload["sub"] == "user-123"
+    assert payload["sub"] == "11111111-1111-1111-1111-111111111111"
 
 
 def test_decode_jwt_hs256_missing_secret() -> None:
@@ -377,6 +399,75 @@ def test_protected_endpoint_accepts_hs256_token(fastapi_app: FastAPI) -> None:
     assert response.json() == {"data": {"pong": True}, "error": None}
 
 
+def test_protected_endpoint_rejects_missing_client_id(fastapi_app: FastAPI) -> None:
+    jwks = _build_jwks()
+
+    async def fetcher() -> dict[str, object]:
+        return jwks
+
+    fastapi_app.dependency_overrides[get_settings] = _settings
+    fastapi_app.dependency_overrides[get_jwks_cache] = lambda: JWKSCache(
+        fetcher=fetcher,
+        ttl_seconds=60,
+    )
+
+    token = _make_token(client_id=None)
+    client = TestClient(fastapi_app)
+    response = client.get(
+        "/api/v1/protected/ping",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 401
+    payload = response.json()
+    assert payload["error"]["code"] == "missing_client_id_claim"
+
+
+def test_protected_endpoint_rejects_invalid_client_id(fastapi_app: FastAPI) -> None:
+    jwks = _build_jwks()
+
+    async def fetcher() -> dict[str, object]:
+        return jwks
+
+    fastapi_app.dependency_overrides[get_settings] = _settings
+    fastapi_app.dependency_overrides[get_jwks_cache] = lambda: JWKSCache(
+        fetcher=fetcher,
+        ttl_seconds=60,
+    )
+
+    token = _make_token(client_id="not-a-uuid")
+    client = TestClient(fastapi_app)
+    response = client.get(
+        "/api/v1/protected/ping",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 401
+    payload = response.json()
+    assert payload["error"]["code"] == "invalid_client_id_claim"
+
+
+def test_protected_endpoint_rejects_invalid_sub(fastapi_app: FastAPI) -> None:
+    jwks = _build_jwks()
+
+    async def fetcher() -> dict[str, object]:
+        return jwks
+
+    fastapi_app.dependency_overrides[get_settings] = _settings
+    fastapi_app.dependency_overrides[get_jwks_cache] = lambda: JWKSCache(
+        fetcher=fetcher,
+        ttl_seconds=60,
+    )
+
+    token = _make_token(sub="user-123")
+    client = TestClient(fastapi_app)
+    response = client.get(
+        "/api/v1/protected/ping",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 401
+    payload = response.json()
+    assert payload["error"]["code"] == "invalid_sub_claim"
+
+
 def test_decode_jwt_missing_supabase_url() -> None:
     async def fetcher() -> dict[str, object]:
         return {"keys": []}
@@ -475,6 +566,25 @@ def test_fetch_jwks() -> None:
     assert result == jwks_payload
 
 
+def test_fetch_jwks_with_provided_client() -> None:
+    jwks_payload = {"keys": [{"kid": "provided-client"}]}
+
+    async def run() -> dict[str, object]:
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _request: httpx.Response(
+                    200,
+                    headers={"Content-Type": "application/json"},
+                    json=jwks_payload,
+                )
+            )
+        ) as client:
+            return await _fetch_jwks(_settings(), client=client)
+
+    result = asyncio.run(run())
+    assert result == jwks_payload
+
+
 def test_get_jwks_cache_reuses_instance() -> None:
     reset_jwks_cache()
     settings = _settings()
@@ -492,3 +602,24 @@ def test_get_jwks_cache_reuses_instance() -> None:
     cache_three = asyncio.run(get_jwks_cache(settings_updated))
     assert cache_three is not cache_one
     reset_jwks_cache()
+
+
+def test_require_auth_context_rejects_non_string_claim() -> None:
+    from app.core.security import require_auth_context
+
+    with pytest.raises(AuthError) as exc:
+        asyncio.run(
+            require_auth_context(
+                claims={"client_id": 123, "sub": "11111111-1111-1111-1111-111111111111"}
+            )
+        )
+    assert exc.value.code == "invalid_client_id_claim"
+
+
+def test_require_auth_context_allows_missing_client_id() -> None:
+    from app.core.security import require_auth_context
+
+    user_id = "11111111-1111-1111-1111-111111111111"
+    context = asyncio.run(require_auth_context(claims={"sub": user_id}))
+    assert context.user_id == uuid.UUID(user_id)
+    assert context.client_id is None

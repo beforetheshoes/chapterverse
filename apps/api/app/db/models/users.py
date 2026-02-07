@@ -24,6 +24,15 @@ library_item_visibility_enum = ENUM(
     create_type=False,
 )
 
+# Minimal auth.users metadata so SQLAlchemy can resolve FK dependency
+# for public.users.id -> auth.users.id during flush ordering.
+auth_users_table = sa.Table(
+    "users",
+    Base.metadata,
+    sa.Column("id", sa.UUID(as_uuid=True), primary_key=True),
+    schema="auth",
+)
+
 
 class User(Base):
     __tablename__ = "users"

@@ -16,6 +16,17 @@ def _request() -> Request:
     return Request({"type": "http", "method": "GET", "path": "/", "headers": []})
 
 
+def _request_with_origin(origin: str) -> Request:
+    return Request(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/",
+            "headers": [(b"origin", origin.encode("utf-8"))],
+        }
+    )
+
+
 def test_auth_exception_handler() -> None:
     exc = AuthError(code="invalid_token", message="Invalid token")
     response = auth_exception_handler(_request(), exc)
@@ -46,6 +57,17 @@ def test_http_exception_handler_with_dict_detail() -> None:
     assert payload["error"]["message"] == "Bad request"
 
 
+def test_http_exception_handler_preserves_headers() -> None:
+    exc = HTTPException(
+        status_code=429,
+        detail={"code": "rate_limited", "message": "Rate limit exceeded."},
+        headers={"Retry-After": "12"},
+    )
+    response = http_exception_handler(_request(), exc)
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "12"
+
+
 def test_validation_exception_handler() -> None:
     exc = RequestValidationError(
         [{"loc": ("query", "q"), "msg": "field required", "type": "value_error"}]
@@ -63,3 +85,13 @@ def test_unhandled_exception_handler() -> None:
     assert response.status_code == 500
     payload = json.loads(bytes(response.body))
     assert payload["error"]["code"] == "internal_error"
+
+
+def test_unhandled_exception_handler_sets_cors_header_for_allowed_origin() -> None:
+    exc = Exception("boom")
+    response = unhandled_exception_handler(
+        _request_with_origin("http://localhost:3000"),
+        exc,
+    )
+    assert response.status_code == 500
+    assert response.headers["Access-Control-Allow-Origin"] == "http://localhost:3000"
