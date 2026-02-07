@@ -33,8 +33,21 @@
         </template>
         <template #footer>
           <div class="flex flex-wrap items-center gap-3">
-            <Button label="Explore library" icon="pi pi-arrow-right" data-test="primary-cta" />
-            <Button label="Add a book" severity="secondary" data-test="secondary-cta" />
+            <NuxtLink
+              to="/library"
+              class="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+              data-test="primary-cta"
+            >
+              <i class="pi pi-arrow-right" aria-hidden="true"></i>
+              Explore library
+            </NuxtLink>
+            <NuxtLink
+              to="/books/search"
+              class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              data-test="secondary-cta"
+            >
+              Add a book
+            </NuxtLink>
           </div>
         </template>
       </Card>
@@ -61,7 +74,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import Button from 'primevue/button';
 import Card from 'primevue/card';
 import InputText from 'primevue/inputtext';
 
