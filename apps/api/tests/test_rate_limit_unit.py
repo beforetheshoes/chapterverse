@@ -91,3 +91,16 @@ def test_enforce_rate_limit_noop_when_default_limit_disabled() -> None:
 
     enforce_client_user_rate_limit(request=request, auth=auth, config=config)
     assert not hasattr(request.state, "rate_limit_event")
+
+
+def test_enforce_rate_limit_allows_missing_client_id_with_fallback() -> None:
+    request = _request("GET", "/api/v1/library/items")
+    auth = AuthContext(
+        claims={},
+        client_id=None,
+        user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+    )
+    config = RateLimitConfig(default_limit=1, window_seconds=60, endpoint_limits={})
+
+    enforce_client_user_rate_limit(request=request, auth=auth, config=config)
+    assert not hasattr(request.state, "rate_limit_event")
