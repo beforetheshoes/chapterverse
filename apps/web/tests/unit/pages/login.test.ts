@@ -9,8 +9,6 @@ const authMocks = vi.hoisted(() => ({
 
 const state = vi.hoisted(() => ({
   supabase: { auth: authMocks },
-  supabaseState: { value: null },
-  supabasePluginLoaded: { value: null },
   config: {
     public: {
       supabaseUrl: 'https://example.supabase.co',
@@ -21,17 +19,7 @@ const state = vi.hoisted(() => ({
 }));
 
 vi.mock('#imports', () => ({
-  useNuxtApp: () => ({
-    $supabase: state.supabase,
-  }),
-  useState: (key: string, init?: () => unknown) => {
-    const target =
-      key === 'supabasePluginLoaded' ? state.supabasePluginLoaded : state.supabaseState;
-    if (target.value === null && init) {
-      target.value = init();
-    }
-    return target;
-  },
+  useSupabaseClient: () => state.supabase,
   useRuntimeConfig: () => state.config,
   useRoute: () => ({
     query: state.route.query,
@@ -48,8 +36,6 @@ describe('login page', () => {
       writable: true,
     });
     state.supabase = { auth: authMocks };
-    state.supabaseState.value = state.supabase;
-    state.supabasePluginLoaded.value = null;
     state.config = {
       public: {
         supabaseUrl: 'https://example.supabase.co',
@@ -152,7 +138,6 @@ describe('login page', () => {
 
   it('shows an error when Supabase is unavailable for magic links', async () => {
     state.supabase = null;
-    state.supabaseState.value = null;
 
     const wrapper = mount(LoginPage, {
       global: {
@@ -183,7 +168,6 @@ describe('login page', () => {
 
   it('falls back when Supabase client is missing', async () => {
     state.supabase = null;
-    state.supabaseState.value = null;
 
     const wrapper = mount(LoginPage, {
       global: {
@@ -246,7 +230,6 @@ describe('login page', () => {
   });
 
   it('shows a debug banner on preview hosts', async () => {
-    state.supabasePluginLoaded.value = true;
     Object.defineProperty(globalThis, 'location', {
       value: {
         origin: 'https://preview.vercel.app',
@@ -270,8 +253,6 @@ describe('login page', () => {
 
   it('shows missing debug flags when config is unavailable', async () => {
     state.supabase = null;
-    state.supabaseState.value = null;
-    state.supabasePluginLoaded.value = false;
     state.config = {
       public: {
         supabaseUrl: '',
@@ -295,7 +276,7 @@ describe('login page', () => {
     expect(wrapper.text()).toContain('supabaseUrl=missing');
     expect(wrapper.text()).toContain('supabaseAnonKey=missing');
     expect(wrapper.text()).toContain('client=missing');
-    expect(wrapper.text()).toContain('plugin=missing');
+    expect(wrapper.text()).toContain('plugin=loaded');
   });
 
   it('skips the debug banner on production hosts', async () => {
