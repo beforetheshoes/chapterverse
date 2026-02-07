@@ -18,6 +18,9 @@ class Settings:
         "http://127.0.0.1:3000",
         "http://localhost:3001",
         "http://127.0.0.1:3001",
+        "https://staging.theseedbed.app",
+        "https://theseedbed.app",
+        "https://www.theseedbed.app",
     )
 
 
@@ -104,6 +107,9 @@ def _parse_cors_origins() -> tuple[str, ...]:
             "http://127.0.0.1:3000",
             "http://localhost:3001",
             "http://127.0.0.1:3001",
+            "https://staging.theseedbed.app",
+            "https://theseedbed.app",
+            "https://www.theseedbed.app",
         )
     return tuple(origin.strip() for origin in raw_origins.split(",") if origin.strip())
 
