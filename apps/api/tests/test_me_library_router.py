@@ -53,7 +53,7 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Generator[FastAPI, None, None]:
 
     monkeypatch.setattr(
         "app.routers.library.list_library_items",
-        lambda session, *, user_id, limit, cursor, status: {
+        lambda session, *, user_id, limit, cursor, status, tag, visibility: {
             "items": [
                 {
                     "id": str(uuid.uuid4()),
@@ -82,6 +82,21 @@ def app(monkeypatch: pytest.MonkeyPatch) -> Generator[FastAPI, None, None]:
             ),
             True,
         ),
+    )
+    monkeypatch.setattr(
+        "app.routers.library.update_library_item",
+        lambda session, *, user_id, item_id, updates: SimpleNamespace(
+            id=item_id,
+            work_id=uuid.uuid4(),
+            status=updates.get("status", "to_read"),
+            visibility=updates.get("visibility", "private"),
+            rating=updates.get("rating"),
+            tags=updates.get("tags"),
+        ),
+    )
+    monkeypatch.setattr(
+        "app.routers.library.delete_library_item",
+        lambda session, *, user_id, item_id: None,
     )
 
     yield app
@@ -115,7 +130,10 @@ def test_patch_me_returns_400_on_validation_error(
 
 def test_list_library_items(app: FastAPI) -> None:
     client = TestClient(app)
-    response = client.get("/api/v1/library/items", params={"status": "reading"})
+    response = client.get(
+        "/api/v1/library/items",
+        params={"status": "reading", "tag": "tag-a", "visibility": "public"},
+    )
     assert response.status_code == 200
     assert response.json()["data"]["items"][0]["status"] == "reading"
 
@@ -155,3 +173,61 @@ def test_list_library_items_returns_400_for_bad_cursor(
     client = TestClient(app)
     response = client.get("/api/v1/library/items", params={"cursor": "bad"})
     assert response.status_code == 400
+
+
+def test_patch_library_item(app: FastAPI) -> None:
+    client = TestClient(app)
+    response = client.patch(
+        f"/api/v1/library/items/{uuid.uuid4()}",
+        json={"status": "reading", "tags": ["memoir"]},
+    )
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["status"] == "reading"
+    assert payload["tags"] == ["memoir"]
+
+
+def test_patch_library_item_returns_400(
+    app: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.routers.library.update_library_item",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("bad update")),
+    )
+    client = TestClient(app)
+    response = client.patch(f"/api/v1/library/items/{uuid.uuid4()}", json={})
+    assert response.status_code == 400
+
+
+def test_patch_library_item_returns_404(
+    app: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.routers.library.update_library_item",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(LookupError("missing item")),
+    )
+    client = TestClient(app)
+    response = client.patch(
+        f"/api/v1/library/items/{uuid.uuid4()}",
+        json={"status": "reading"},
+    )
+    assert response.status_code == 404
+
+
+def test_delete_library_item(app: FastAPI) -> None:
+    client = TestClient(app)
+    response = client.delete(f"/api/v1/library/items/{uuid.uuid4()}")
+    assert response.status_code == 200
+    assert response.json()["data"]["deleted"] is True
+
+
+def test_delete_library_item_returns_404(
+    app: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        "app.routers.library.delete_library_item",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(LookupError("missing item")),
+    )
+    client = TestClient(app)
+    response = client.delete(f"/api/v1/library/items/{uuid.uuid4()}")
+    assert response.status_code == 404

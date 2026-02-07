@@ -130,6 +130,8 @@ def list_library_items(
     limit: int,
     cursor: str | None,
     status: str | None,
+    tag: str | None,
+    visibility: str | None,
 ) -> dict[str, Any]:
     stmt = (
         sa.select(LibraryItem, Work.title)
@@ -139,6 +141,10 @@ def list_library_items(
     )
     if status is not None:
         stmt = stmt.where(LibraryItem.status == status)
+    if visibility is not None:
+        stmt = stmt.where(LibraryItem.visibility == visibility)
+    if tag is not None:
+        stmt = stmt.where(LibraryItem.tags.contains([tag]))
 
     if cursor:
         cursor_created, cursor_id = _decode_cursor(cursor)
@@ -177,3 +183,48 @@ def list_library_items(
         next_cursor = _encode_cursor(last_item.created_at, last_item.id)
 
     return {"items": items, "next_cursor": next_cursor}
+
+
+def update_library_item(
+    session: Session,
+    *,
+    user_id: uuid.UUID,
+    item_id: uuid.UUID,
+    updates: dict[str, Any],
+) -> LibraryItem:
+    if not updates:
+        raise ValueError("at least one field must be provided")
+
+    item = session.scalar(
+        sa.select(LibraryItem).where(
+            LibraryItem.id == item_id,
+            LibraryItem.user_id == user_id,
+        )
+    )
+    if item is None:
+        raise LookupError("library item not found")
+
+    for field in ("preferred_edition_id", "status", "visibility", "rating", "tags"):
+        if field in updates:
+            setattr(item, field, updates[field])
+
+    session.commit()
+    return item
+
+
+def delete_library_item(
+    session: Session,
+    *,
+    user_id: uuid.UUID,
+    item_id: uuid.UUID,
+) -> None:
+    item = session.scalar(
+        sa.select(LibraryItem).where(
+            LibraryItem.id == item_id,
+            LibraryItem.user_id == user_id,
+        )
+    )
+    if item is None:
+        raise LookupError("library item not found")
+    session.delete(item)
+    session.commit()
