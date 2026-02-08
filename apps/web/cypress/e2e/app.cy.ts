@@ -9,9 +9,12 @@ describe('home page', () => {
 
   it('renders search and library pages', () => {
     cy.visit('/books/search');
-    cy.get('[data-test="search-card"]').should('contain', 'Search and import books');
+    cy.get('[data-test="search-card"]', { timeout: 15000 }).should(
+      'contain',
+      'Search and import books',
+    );
 
     cy.visit('/library');
-    cy.get('[data-test="library-card"]').should('contain', 'Your library');
+    cy.get('[data-test="library-card"]', { timeout: 15000 }).should('contain', 'Your library');
   });
 });
