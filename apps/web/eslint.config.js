@@ -66,6 +66,17 @@ export default [
     },
   },
   {
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        fetch: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
+      },
+    },
+  },
+  {
     files: ['nuxt.config.ts'],
     languageOptions: {
       globals: {
