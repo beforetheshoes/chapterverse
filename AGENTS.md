@@ -17,6 +17,11 @@ Project instructions for Codex. These rules override any defaults.
 - Local dev uses Supabase CLI (`supabase start`, `make supabase-env`).
 - Staging is the active deployment target unless told otherwise.
 - There is no production auth UI yet; assume auth flows are dashboard/config driven for now unless a UI issue is explicitly assigned.
+- Branch/deploy workflow (enforce staging-first):
+  - Do day-to-day work via PRs targeting `development` (default branch).
+  - `development` deploys to staging (`staging.theseedbed.app` + staging API).
+  - Promote to prod by opening a release PR `development -> main` (prod is `theseedbed.app` + prod API).
+  - Avoid direct merges to `main` except emergency hotfixes; if you do, immediately back-merge `main -> development`.
 
 ## Commands
 - Quality gate: `make quality` (must pass before completion).
