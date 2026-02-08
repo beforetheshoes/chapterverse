@@ -109,6 +109,56 @@ def test_request_retries_on_5xx() -> None:
     assert result.items == []
 
 
+def test_request_retries_on_429_respects_retry_after_header() -> None:
+    calls = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return httpx.Response(
+                429,
+                headers={"Retry-After": "1"},
+                json={"message": "rate limited"},
+            )
+        return httpx.Response(200, json={"docs": []})
+
+    client = OpenLibraryClient(transport=httpx.MockTransport(handler), max_retries=2)
+    result = asyncio.run(client.search_books(query="retry-429"))
+
+    assert calls["count"] == 2
+    assert result.items == []
+
+
+def test_request_does_not_retry_on_4xx_other_than_429() -> None:
+    calls = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        return httpx.Response(404, json={"message": "not found"})
+
+    client = OpenLibraryClient(transport=httpx.MockTransport(handler), max_retries=5)
+    with pytest.raises(httpx.HTTPStatusError):
+        asyncio.run(client.search_books(query="no-retry"))
+
+    assert calls["count"] == 1
+
+
+def test_request_retries_on_timeout() -> None:
+    calls = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise httpx.ReadTimeout("timed out", request=request)
+        return httpx.Response(200, json={"docs": []})
+
+    client = OpenLibraryClient(transport=httpx.MockTransport(handler), max_retries=2)
+    result = asyncio.run(client.search_books(query="retry-timeout"))
+
+    assert calls["count"] == 2
+    assert result.items == []
+
+
 def test_normalize_keys() -> None:
     assert _normalize_work_key("OL1W") == "/works/OL1W"
     assert _normalize_work_key("/works/OL1W") == "/works/OL1W"

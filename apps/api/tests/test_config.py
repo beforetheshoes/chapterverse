@@ -72,6 +72,61 @@ def test_get_settings_custom_cors_origins() -> None:
         config_module.reset_settings_cache()
 
 
+def test_get_settings_falls_back_supabase_url_for_prod_env(tmp_path: Path) -> None:
+    original_env = os.environ.copy()
+    original_cwd = os.getcwd()
+    try:
+        # Ensure .env does not re-introduce SUPABASE_URL during this test.
+        os.chdir(tmp_path)
+        os.environ["APP_CONFIG_DIR"] = str(tmp_path)
+        os.environ.pop("SUPABASE_URL", None)
+        os.environ["SUPABASE_ENV"] = "production"
+        config_module.reset_settings_cache()
+
+        settings = config_module.get_settings()
+        assert settings.supabase_url == "https://aaohmjvcsgyqqlxomegu.supabase.co"
+    finally:
+        os.chdir(original_cwd)
+        os.environ.clear()
+        os.environ.update(original_env)
+        config_module.reset_settings_cache()
+
+
+def test_get_settings_falls_back_supabase_url_for_staging_env(tmp_path: Path) -> None:
+    original_env = os.environ.copy()
+    original_cwd = os.getcwd()
+    try:
+        # Ensure .env does not re-introduce SUPABASE_URL during this test.
+        os.chdir(tmp_path)
+        os.environ["APP_CONFIG_DIR"] = str(tmp_path)
+        os.environ.pop("SUPABASE_URL", None)
+        os.environ["SUPABASE_ENV"] = "staging"
+        config_module.reset_settings_cache()
+
+        settings = config_module.get_settings()
+        assert settings.supabase_url == "https://kypwcksvicrbrrwscdze.supabase.co"
+    finally:
+        os.chdir(original_cwd)
+        os.environ.clear()
+        os.environ.update(original_env)
+        config_module.reset_settings_cache()
+
+
+def test_get_settings_supabase_url_env_wins_over_fallback() -> None:
+    original_env = os.environ.copy()
+    try:
+        os.environ["SUPABASE_URL"] = "https://explicit.supabase.co/"
+        os.environ["SUPABASE_ENV"] = "production"
+        config_module.reset_settings_cache()
+
+        settings = config_module.get_settings()
+        assert settings.supabase_url == "https://explicit.supabase.co"
+    finally:
+        os.environ.clear()
+        os.environ.update(original_env)
+        config_module.reset_settings_cache()
+
+
 def test_get_settings_loads_dotenv(tmp_path: Path) -> None:
     original_env = os.environ.copy()
     original_cwd = os.getcwd()

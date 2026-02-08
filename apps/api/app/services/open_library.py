@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import time
 from dataclasses import dataclass
 from typing import Any, cast
@@ -124,28 +125,57 @@ class OpenLibraryClient:
     ) -> dict[str, Any]:
         url = f"{self._base_url}{path}"
         headers = {"User-Agent": self._user_agent}
-        backoff = 0.2
+        retryable_statuses = {429, 500, 502, 503, 504}
+        timeout = httpx.Timeout(connect=5.0, read=10.0, write=10.0, pool=5.0)
 
-        for attempt in range(1, self._max_retries + 1):
+        def parse_retry_after_seconds(value: str | None) -> float | None:
+            if not value:
+                return None
             try:
-                async with httpx.AsyncClient(
-                    timeout=10.0, transport=self._transport
-                ) as client:
+                seconds = float(int(value.strip()))
+            except ValueError:
+                return None
+            if seconds <= 0:
+                return None
+            return seconds
+
+        def compute_sleep_seconds(*, attempt: int, retry_after: float | None) -> float:
+            # Exponential backoff with full jitter, capped.
+            base = 0.2
+            cap = 2.0
+            max_delay = min(cap, base * (2 ** (attempt - 1)))
+            delay = retry_after if retry_after is not None else max_delay
+            delay = max(0.0, min(delay, cap))
+            return random.uniform(0.0, delay)
+
+        async with httpx.AsyncClient(
+            timeout=timeout, transport=self._transport
+        ) as client:
+            for attempt in range(1, self._max_retries + 1):
+                try:
                     response = await client.get(url, params=params, headers=headers)
+                except (httpx.TimeoutException, httpx.TransportError):
+                    if attempt >= self._max_retries:
+                        raise
+                    await asyncio.sleep(
+                        compute_sleep_seconds(attempt=attempt, retry_after=None)
+                    )
+                    continue
+
                 if (
-                    response.status_code in {429, 500, 502, 503, 504}
+                    response.status_code in retryable_statuses
                     and attempt < self._max_retries
                 ):
-                    await asyncio.sleep(backoff)
-                    backoff *= 2
+                    retry_after = parse_retry_after_seconds(
+                        response.headers.get("Retry-After")
+                    )
+                    await asyncio.sleep(
+                        compute_sleep_seconds(attempt=attempt, retry_after=retry_after)
+                    )
                     continue
+
                 response.raise_for_status()
                 return cast(dict[str, Any], response.json())
-            except httpx.HTTPError:
-                if attempt >= self._max_retries:
-                    raise
-                await asyncio.sleep(backoff)
-                backoff *= 2
 
         raise RuntimeError("open library request failed")
 
