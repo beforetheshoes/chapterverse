@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+_STAGING_SUPABASE_URL = "https://kypwcksvicrbrrwscdze.supabase.co"
+_PROD_SUPABASE_URL = "https://aaohmjvcsgyqqlxomegu.supabase.co"
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -88,6 +91,25 @@ def _normalize_supabase_url(value: str) -> str:
     return value.rstrip("/")
 
 
+def _normalize_env(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if not normalized:
+        return None
+    return normalized
+
+
+def _fallback_supabase_url_for_env(env_label: str | None) -> str | None:
+    # Defensive fallback: if hosting forgets to pass SUPABASE_URL, infer it from
+    # SUPABASE_ENV. URLs aren't secrets and are stable per environment.
+    if env_label in {"staging", "stage"}:
+        return _STAGING_SUPABASE_URL
+    if env_label in {"prod", "production"}:
+        return _PROD_SUPABASE_URL
+    return None
+
+
 def _parse_ttl_seconds() -> int:
     default_ttl = 300
     raw_ttl = os.getenv("SUPABASE_JWKS_CACHE_TTL_SECONDS")
@@ -118,7 +140,11 @@ def _parse_cors_origins() -> tuple[str, ...]:
 def get_settings() -> Settings:
     """Settings are cached; call reset_settings_cache when env values change."""
     _load_dotenv()
-    supabase_url = _normalize_supabase_url(os.getenv("SUPABASE_URL", "").strip())
+    raw_url = os.getenv("SUPABASE_URL", "").strip()
+    if not raw_url:
+        env_label = _normalize_env(os.getenv("SUPABASE_ENV"))
+        raw_url = _fallback_supabase_url_for_env(env_label) or ""
+    supabase_url = _normalize_supabase_url(raw_url)
     audience: str | None = os.getenv("SUPABASE_JWT_AUDIENCE", "authenticated").strip()
     if not audience:
         audience = None
